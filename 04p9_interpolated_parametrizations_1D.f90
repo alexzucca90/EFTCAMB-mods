@@ -54,7 +54,8 @@ module EFTCAMB_interpolated_function_1D
         ! the arrays for the interpolations.
         real(dl) :: InterpolationArray_a(number_of_points),      InterpolationArray_value(number_of_points), &
                     InterpolationArray_deriv1(number_of_points), InterpolationArray_deriv2(number_of_points), &
-                    InterpolationArray_deriv3(number_of_points)
+                    InterpolationArray_deriv3(number_of_points), InterpolationArray_int(number_of_points), &
+                    InterpolationArray_int2(number_of_points)
 
         real(dl) :: fake_param !< parameter inserted just for compatibility purposes.
 
@@ -78,7 +79,6 @@ module EFTCAMB_interpolated_function_1D
         procedure :: third_derivative    => InterpolatedFunction1DThirdDerivative  !< function that returns the third derivative of the interpolation.
         procedure :: integral            => InterpolatedFunction1DIntegral         !< function that returns the strange integral that we need for w_DE.
 
-        ! I think I should replace some stuff here... let's see
 
     end type interpolated_function_1D
 
@@ -204,7 +204,8 @@ subroutine InterpolatedFunction1DInitialization(self)
 
     do i  = 1, number_of_points
         ! read a, f(a) from file and fill the array
-        read(7,*) self%InterpolationArray_a(i), self%InterpolationArray_value(i), self%InterpolationArray_deriv1(i)
+        read(7,*) self%InterpolationArray_a(i), self%InterpolationArray_value(i), &
+                    self%InterpolationArray_deriv1(i), self%InterpolationArray_int(i)
     end do
 
     ! close the file
@@ -213,6 +214,7 @@ subroutine InterpolatedFunction1DInitialization(self)
     ! initialize the interpolations
     call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_value,  number_of_points, self%InterpolationArray_deriv2)
     call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_deriv1, number_of_points, self%InterpolationArray_deriv3)
+    call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_int,    number_of_points, self%InterpolationArray_int2)
 
     ! done
     self%is_function_loaded = .true.
@@ -297,6 +299,8 @@ function InterpolatedFunction1DThirdDerivative( self, x, eft_cache )
 end function InterpolatedFunction1DThirdDerivative
 
 
+! ---------------------------------------------------------------------------------------------
+!> Function that computes the integral for rho_DE
 function InterpolatedFunction1DIntegral( self, x, eft_cache )
 
     implicit none
@@ -306,15 +310,19 @@ function InterpolatedFunction1DIntegral( self, x, eft_cache )
     type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache
     real(dl) :: InterpolatedFunction1DIntegral
 
-    ! Now what to do? rombint most likely
+    !other variables
+    real(dl) :: int
+    real(dl) :: tol = 1.d-6
+
     if (.not. self%is_function_loaded) call self%initialize_function
 
+    int = GBD_spline_val(x, self%InterpolationArray_a, self%InterpolationArray_int, self%InterpolationArray_int2, number_of_points)
 
+    InterpolatedFunction1DIntegral = x**2.d0 * Exp(3.d0*int)
 
 end function InterpolatedFunction1DIntegral
 
-
-    ! ---------------------------------------------------------------------------------------------
+! ---------------------------------------------------------------------------------------------
 
 end module EFTCAMB_interpolated_function_1D
 !----------------------------------------------------------------------------------------
