@@ -8,7 +8,7 @@ a f(a) f'(a), \int_a^1 dx (1+f(x))/x
 
 The integral is needed for wDE(a).
 
-### Installation
+### Installing
 
 I assume that your EFTCAMB directory is EFTCAMB/ 
 
@@ -18,7 +18,7 @@ Put the files:
 - 07p1_Pure_EFT_std.f90                      -> in EFTCAMB/eftcamb/
 - params_EFT.ini                             -> in EFTCAMB/
 
-Also remember to provide two files for Omega(a)  and wDE(a) as said above.
+Also remember to provide two files for Omega(a)  and wDE(a) as said above. Please, make sure that the number of points in the files matches the numbet_of_points variable declared at the beginning of the file 04p9_interpolated_parametrizations_1D.f90.
 
 Then run 
   - make clean
