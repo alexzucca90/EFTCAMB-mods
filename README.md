@@ -20,10 +20,13 @@ Put the files:
 
 Also remember to provide two files for Omega(a)  and wDE(a) as said above.
 
-Run 
+Then run 
   - make clean
   - make eftcamb_dep
   - make eftcamb
   
+ ### Run the program
+ 
+ Simply with ./camb params.ini as always.
   
 
