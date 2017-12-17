@@ -47,7 +47,7 @@ module EFTCAMB_interpolated_function_1D
     type, extends ( parametrized_function_1D ) :: interpolated_function_1D
 
         ! Interpolation function variables
-        character(len=50)                   :: file, file_name
+        character(len=EFT_names_max_length)                   :: file, file_name
         !integer                             :: number_of_points
         logical                             :: is_function_loaded = .false.
 
@@ -144,9 +144,13 @@ subroutine InterpolatedFunction1DFeedback( self, print_params )
         print_params_temp = .True.
     end if
 
+    !> some useless stuff
+    write(*,*) self%file_name
+    pause
+
     write(*,*)     'Interpolated Function: ', self%name
     if ( print_params_temp ) then
-        write(*,*) self%file_name, '=', self%file
+        write(*,*) TRIM(self%file_name), ' = ', TRIM(self%file)
     end if
 
 end subroutine InterpolatedFunction1DFeedback
@@ -160,12 +164,12 @@ subroutine InterpolatedFunction1DInitFromFile( self, Ini )
 
     class(interpolated_function_1D)     :: self   !< the base class
     type(TIniFile)                      :: Ini    !< Input ini file
-    character(len=50)                   :: file_name, file
+    character(len=EFT_names_max_length)                   :: file_name, file
 
     file_name = self%file_name
     file = Ini_Read_String_File(Ini, TRIM(file_name))
 
-    self%file = file
+    self%file = TRIM(file)
 
     !initialize the function parameters from the vector:
     !call self%init_parameters( parameters )
@@ -180,10 +184,10 @@ subroutine InterpolatedFunction1DSetParamNames(self, param_names, param_names_la
     implicit none
 
     class(interpolated_function_1D)                         :: self            !< the base class
-    character(len=50), intent(in), dimension(:)             :: param_names       !< the name of the file
-    character(len=50), intent(in), dimension(:), optional   :: param_names_latex !< the name of the file in latex (useless)
+    character(len=EFT_names_max_length), intent(in), dimension(:)             :: param_names       !< the name of the file
+    character(len=EFT_names_max_length), intent(in), dimension(:), optional   :: param_names_latex !< the name of the file in latex (useless)
 
-    self%file_name = param_names(1)
+    self%file_name = trim(param_names(1))
 
 end subroutine InterpolatedFunction1DSetParamNames
 
@@ -200,7 +204,7 @@ subroutine InterpolatedFunction1DInitialization(self)
     integer                         :: i
 
     ! Open the file
-    open(unit=7, file = self%file, status = "unknown")
+    open(unit=7, file = TRIM(self%file), status = "unknown")
 
     do i  = 1, number_of_points
         ! read a, f(a) from file and fill the array

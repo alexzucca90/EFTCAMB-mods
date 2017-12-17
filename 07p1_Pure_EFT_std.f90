@@ -159,7 +159,7 @@ contains
 !> adding a new case here
             case(5)
                 allocate(interpolated_function_1D::self%PureEFTOmega)
-                call self%PureEFTOmega%set_param_names(['Omega_file'])
+                call self%PureEFTOmega%set_param_names(['Omega_filename'])
 ! GBD MOD: end
 !--------
             case default
@@ -190,7 +190,7 @@ contains
 !> adding a new case here: interpolated function
             case(6)
                 allocate( interpolated_function_1D::self%PureEFTwDE )
-                call self%PureEFTwDE%set_param_names(['wDE_file'])
+                call self%PureEFTwDE%set_param_names(['wDE_filename  '])
                 ! Nothing else to add
 ! GBD MOD: end
 !------

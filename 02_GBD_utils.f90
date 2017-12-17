@@ -127,15 +127,17 @@ real(dl) function GBD_spline_1der(x, xv, yv, y2, n)
         h = xv(2) - xv(1)
         a = (yv(2) - yv(1)) / h
         !GBD_spline_1der = (a - h * y2(2) / 6) * (x - xv(1)) + yv(1)
-        WRITE(*,*) "spline_der: extrapolation not implemented yet"
-        write(*,*) x, xv(1)
+        GBD_spline_1der =  - h * y2(2) / 6
+        !WRITE(*,*) "spline_der: extrapolation not implemented yet"
+        !write(*,*) x, xv(1)
         !stop
     else if(x > xv(n)) then
         h = xv(n) - xv(n-1)
-        a = (yv(n) - yv(n-1)) / h
+        !a = (yv(n) - yv(n-1)) / h
         !GBD_spline_1der = (a + h * y2(n-1) / 6) * (x - xv(n)) + yv(n)
-        WRITE(*,*) "spline_1der: extrapolation not implemented yet"
-        write(*,*) x, xv(n)
+        GBD_spline_1der =  h * y2(n-1) / 6
+        !WRITE(*,*) "spline_1der: extrapolation not implemented yet"
+        !write(*,*) x, xv(n)
         !stop
     else
     ! Bisection to find correct interval
@@ -182,16 +184,18 @@ real(dl) function GBD_spline_2der(x, xv, yv, y2, n)
     if(x < xv(1)) then
         h = xv(2) - xv(1)
         a = (yv(2) - yv(1)) / h
-        !GBD_spline_1der = (a - h * y2(2) / 6) * (x - xv(1)) + yv(1)
-        WRITE(*,*) "spline_der: extrapolation not implemented yet"
-        write(*,*) x, xv(1)
+        !GBD_spline_2der = (a - h * y2(2) / 6) * (x - xv(1)) + yv(1)
+        GBD_spline_2der = 0.d0
+        !WRITE(*,*) "spline_2der: extrapolation not implemented yet"
+        !write(*,*) x, xv(1)
         !stop
     else if(x > xv(n)) then
         h = xv(n) - xv(n-1)
         a = (yv(n) - yv(n-1)) / h
-        !GBD_spline_1der = (a + h * y2(n-1) / 6) * (x - xv(n)) + yv(n)
-        WRITE(*,*) "spline_1der: extrapolation not implemented yet"
-        write(*,*) x, xv(n)
+        !GBD_spline_2der = (a + h * y2(n-1) / 6) * (x - xv(n)) + yv(n)
+        GBD_spline_2der = 0.d0
+        !WRITE(*,*) "spline_2der: extrapolation not implemented yet"
+        !write(*,*) x, xv(n)
         !stop
     else
         ! Bisection to find correct interval
@@ -215,8 +219,11 @@ real(dl) function GBD_spline_2der(x, xv, yv, y2, n)
         d = (b**3 - b)* h**2 / 6
 
         !this is the derivative
-        GBD_spline_2der = (yv(kh) - yv(kl))/h - (3.d0*a**2 -1.d0)/6.d0 * h * y2(kl) +(3.d0*b**2 -1.d0)/6.d0*&
-        h * y2(kh)
+        !GBD_spline_1der = (yv(kh) - yv(kl))/h - (3.d0*a**2 -1.d0)/6.d0 * h * y2(kl) +(3.d0*b**2 -1.d0)/6.d0*&
+        !h * y2(kh)
+
+        ! this is the second derivative
+        GBD_spline_2der = a*y2(kl)+b*y2(kh)
 
     end if
 
