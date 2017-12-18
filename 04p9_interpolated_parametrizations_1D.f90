@@ -36,7 +36,7 @@ module EFTCAMB_interpolated_function_1D
 
     implicit none
 
-    integer, parameter :: number_of_points = 100
+    integer, parameter :: number_of_points = 10000
 
     private
 
@@ -47,9 +47,8 @@ module EFTCAMB_interpolated_function_1D
     type, extends ( parametrized_function_1D ) :: interpolated_function_1D
 
         ! Interpolation function variables
-        character(len=EFT_names_max_length)                   :: file, file_name
-        !integer                             :: number_of_points
-        logical                             :: is_function_loaded = .false.
+        character(len=EFT_names_max_length)             :: file, file_name
+        logical                                         :: is_function_loaded = .false.
 
         ! the arrays for the interpolations.
         real(dl) :: InterpolationArray_a(number_of_points),      InterpolationArray_value(number_of_points), &
@@ -145,8 +144,8 @@ subroutine InterpolatedFunction1DFeedback( self, print_params )
     end if
 
     !> some useless stuff
-    write(*,*) self%file_name
-    pause
+    !write(*,*) self%file_name
+    !pause
 
     write(*,*)     'Interpolated Function: ', self%name
     if ( print_params_temp ) then
@@ -184,10 +183,10 @@ subroutine InterpolatedFunction1DSetParamNames(self, param_names, param_names_la
     implicit none
 
     class(interpolated_function_1D)                         :: self            !< the base class
-    character(len=EFT_names_max_length), intent(in), dimension(:)             :: param_names       !< the name of the file
-    character(len=EFT_names_max_length), intent(in), dimension(:), optional   :: param_names_latex !< the name of the file in latex (useless)
+    character(*), intent(in), dimension(:)            :: param_names       !< an array of strings containing the names of the function parameters
+    character(*), intent(in), dimension(:), optional  :: param_names_latex
 
-    self%file_name = trim(param_names(1))
+    self%file_name = param_names(1)
 
 end subroutine InterpolatedFunction1DSetParamNames
 
