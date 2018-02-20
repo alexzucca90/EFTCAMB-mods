@@ -21,15 +21,29 @@ implicit none
 !            y = array of variables, y(1) is the independent variable
 !            dt = interval of independent variable
 !
+!   if you use this subroutine for your projects, please remove
+!
+!          use AMLUtils
+!          use Precision
+!
+!      and uncomment the line
+!          integer,parameter :: dl=kind(1.d0)
+!
+!
+!
 !---------------------------------------------------------------
-integer, parameter :: s = 5
-integer :: n
-real(dl) :: y(n), dt
-real(dl) :: g(n,s), dx
-integer :: i, k
-external fcn
+    integer, parameter :: s = 5
+    integer :: n
 
-! Butcher tableau for 8th order Gauss-Legendre method
+    !> uncomment the following line if you use this subroutine for your projects
+    !integer,parameter :: dl=kind(1.d0)
+
+    real(dl) :: y(n), dt
+    real(dl) :: g(n,s), dx
+    integer :: i, k
+    external fcn
+
+!> Butcher tableau for 8th order Gauss-Legendre method
 real(dl), parameter :: a(s,s) = reshape((/ &
 0.5923172126404727187856601017997934066Q-1, -1.9570364359076037492643214050884060018Q-2, &
 1.1254400818642955552716244215090748773Q-2, -0.5593793660812184876817721964475928216Q-2, &
@@ -49,25 +63,30 @@ real, parameter ::   b(s) = (/ &
 2.8444444444444444444444444444444444444Q-1,  2.3931433524968323402064575741781909646Q-1, &
 1.1846344252809454375713202035995868132Q-1 /)
 
+    !> some debug info
+    !write(*,*) " y = ", y
 
-!write(*,*) " y = ", y
-! iterate trial steps
-g=0.0
-do k = 1,16
-g = matmul(g,a)
-do i = 1,s
-!write(*,*) "y+g(:,i)*dt = ", y + g(:,i)*dt
-call fcn(n, y + g(:,i)*dt, g(:,i))
-end do
-!write(*,*) g(1,:)
-!pause
-end do
+    !> iterate trial steps
+    g=0.0
+    do k = 1,16
+        g = matmul(g,a)
+        do i = 1,s
+            !> Debug info
+            !write(*,*) "y+g(:,i)*dt = ", y + g(:,i)*dt
 
-! update the solution
-y = y + matmul(g,b)*dt
+            call fcn(n, y + g(:,i)*dt, g(:,i))
+        end do
+        !> Debug info
+        !write(*,*) g(1,:)
+        !pause
+    end do
 
-!write(*,*) " y = ", y
-!write(*,*)
-!pause
+    !> update the solution
+    y = y + matmul(g,b)*dt
+
+    !> Debug info
+    !write(*,*) " y = ", y
+    !write(*,*)
+    !pause
 end subroutine gl10
 
