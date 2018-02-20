@@ -1,4 +1,4 @@
-subroutine GaussLegendre10(n,fcn,x,y,xend)
+subroutine gl10(n,fcn,y, dt)
 use Precision
 use AMLUtils
 implicit none
@@ -24,9 +24,8 @@ implicit none
 !---------------------------------------------------------------
 integer, parameter :: s = 5
 integer :: n
-real(dl) :: y(n)
-real(dl) :: x,xend,dx
-real(dl) :: gg(n+1, s), yy(n+1)
+real(dl) :: y(n), dt
+real(dl) :: g(n,s), dx
 integer :: i, k
 external fcn
 
@@ -50,33 +49,25 @@ real, parameter ::   b(s) = (/ &
 2.8444444444444444444444444444444444444Q-1,  2.3931433524968323402064575741781909646Q-1, &
 1.1846344252809454375713202035995868132Q-1 /)
 
-!set up the vectors
-dx = (xend-x)
-yy(n+1) = x
-yy(1:n) = y
 
-!write(*,*) "y = ", yy(2:n+1)
-!pause
+!write(*,*) " y = ", y
 ! iterate trial steps
-gg=0.0
+g=0.0
 do k = 1,16
-    gg = matmul(gg,a)
-    do i = 1,s
-        !write(*,*) "y + g(:,i)*dt = ", yy + gg(:,i)*dx
-        call fcn(n, yy(n+1)+gg(n+1,i)*dx , yy(1:n) + gg(1:n,i)*dx, gg(1:n,i))
-        gg(n+1,i) = 1.d0
-    end do
-    !write(*,*) gg(1,:)
-    !pause
+g = matmul(g,a)
+do i = 1,s
+!write(*,*) "y+g(:,i)*dt = ", y + g(:,i)*dt
+call fcn(n, y + g(:,i)*dt, g(:,i))
+end do
+!write(*,*) g(1,:)
+!pause
 end do
 
 ! update the solution
-yy = yy + matmul(gg,b)*dx
+y = y + matmul(g,b)*dt
 
-! final result
-y = yy(1:n)
-
-!write(*,*) "yy = ", yy
+!write(*,*) " y = ", y
 !write(*,*)
 !pause
-end subroutine GaussLegendre10
+end subroutine gl10
+
