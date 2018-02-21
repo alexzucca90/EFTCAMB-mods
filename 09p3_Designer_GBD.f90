@@ -95,21 +95,21 @@ use EFTCAMB_interpolated_function_1D
         procedure :: omega_phi                       => EFTCAMBDesignerGBDCoupling                      !< function that computes omega(phi) and its derivatives
 
         ! utility functions:
-        procedure :: compute_param_number  => EFTCAMBDesignerFRComputeParametersNumber     !< subroutine that computes the number of parameters of the model.
-        procedure :: feedback              => EFTCAMBDesignerFRFeedback                    !< subroutine that prints on the screen feedback information about the model.
-        procedure :: parameter_names       => EFTCAMBDesignerFRParameterNames              !< subroutine that returns the i-th parameter name of the model.
-        procedure :: parameter_names_latex => EFTCAMBDesignerFRParameterNamesLatex         !< subroutine that returns the i-th parameter name of the model.
-        procedure :: parameter_values      => EFTCAMBDesignerFRParameterValues             !< subroutine that returns the i-th parameter value.
+        procedure :: compute_param_number  => EFTCAMBDesignerGBDComputeParametersNumber     !< subroutine that computes the number of parameters of the model.
+        procedure :: feedback              => EFTCAMBDesignerGBDFeedback                    !< subroutine that prints on the screen feedback information about the model.
+        procedure :: parameter_names       => EFTCAMBDesignerGBDParameterNames              !< subroutine that returns the i-th parameter name of the model.
+        procedure :: parameter_names_latex => EFTCAMBDesignerGBDParameterNamesLatex         !< subroutine that returns the i-th parameter name of the model.
+        procedure :: parameter_values      => EFTCAMBDesignerGBDParameterValues             !< subroutine that returns the i-th parameter value.
 
         ! CAMB related procedures:
-        procedure :: compute_background_EFT_functions  => EFTCAMBDesignerFRBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
-        procedure :: compute_secondorder_EFT_functions => EFTCAMBDesignerFRSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
-        procedure :: compute_dtauda                    => EFTCAMBDesignerFRComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2).
-        procedure :: compute_adotoa                    => EFTCAMBDesignerFRComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
-        procedure :: compute_H_derivs                  => EFTCAMBDesignerFRComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
+        procedure :: compute_background_EFT_functions  => EFTCAMBDesignerGBDBackgroundEFTFunctions   !< subroutine that computes the value of the background EFT functions at a given time.
+        procedure :: compute_secondorder_EFT_functions => EFTCAMBDesignerGBDSecondOrderEFTFunctions  !< subroutine that computes the value of the second order EFT functions at a given time.
+        procedure :: compute_dtauda                    => EFTCAMBDesignerGBDComputeDtauda            !< function that computes dtauda = 1/sqrt(a^2H^2).
+        procedure :: compute_adotoa                    => EFTCAMBDesignerGBDComputeAdotoa            !< subroutine that computes adotoa = H and its two derivatives wrt conformal time.
+        procedure :: compute_H_derivs                  => EFTCAMBDesignerGBDComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
 
         ! stability procedures:
-        procedure :: additional_model_stability        => EFTCAMBDesignerFRAdditionalModelStability !< function that computes model specific stability requirements.
+        procedure :: additional_model_stability        => EFTCAMBDesignerGBDAdditionalModelStability !< function that computes model specific stability requirements.
 
     end type EFTCAMB_GBD_designer
 
@@ -350,6 +350,31 @@ contains
         call self%EFTOmega%initialize   ( self%designer_num_points, self%x_initial, self%x_final )
         call self%EFTLambda%initialize  ( self%designer_num_points, self%x_initial, self%x_final )
         call self%EFTc%initialize       ( self%designer_num_points, self%x_initial, self%x_final )
+
+
+        !> Re-introducing this at some point
+        !> debug code:
+        if ( DebugEFTCAMB ) then
+            !> print the function B0(A). This is used to debug the initial conditions part.
+        !    call CreateTxtFile( './debug_designer_GBD_B.dat', 34 )
+        !    print*, 'EFTCAMB DEBUG ( GBD designer ): Printing phi results'
+        !    TempMin      = -100._dl
+        !    TempMax      = +100._dl
+        !    Debug_MaxNum = 1000
+        !    do Debug_n = 1, Debug_MaxNum
+        !        debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
+        !        call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True., success=success )
+        !        write(34,*) debug_A, B0
+        !    end do
+        !    close(34)
+        !    ! prints f(R) quantities.
+            print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
+            call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
+            call self%solve_designer_equations( params_cache, success=success )
+            close(33)
+        end if
+
+
 
 
         !> solve the background equations and store the solution:
@@ -713,15 +738,13 @@ contains
             self%EFTLambda%yp(ind)  = self%EFTc%yp(ind) - Vdot * a**2
 
 
-            !> this has to be added later
-            !if ( DebugEFTCAMB ) then
-            !    inquire( unit=33, opened=is_open )
-            !    if ( is_open ) then
-            !        write (33,'(20E15.5)') x, Exp(x), Ricci, y(1), &
-            !        & self%EFTOmega%y(ind), self%EFTOmega%yp(ind), self%EFTOmega%ypp(ind), self%EFTOmega%yppp(ind), self%EFTLambda%y(ind), self%EFTLambda%yp(ind),&
-            !        & B
-            !    end if
-            !end if
+            !> Debug info
+            if ( DebugEFTCAMB ) then
+                inquire( unit=33, opened=is_open )
+                if ( is_open ) then
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                end if
+            end if
 
 
         end subroutine output
