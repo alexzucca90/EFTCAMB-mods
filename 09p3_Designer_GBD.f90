@@ -42,8 +42,8 @@ module EFTCAMB_designer_GBD
     use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
-!> adding the interpolated function
-use EFTCAMB_interpolated_function_1D
+    !> adding the interpolated function
+    use EFTCAMB_interpolated_function_1D
 
     implicit none
 
@@ -91,7 +91,8 @@ use EFTCAMB_interpolated_function_1D
         ! background solver:
         procedure :: initialize_background           => EFTCAMBDesignerGBDInitBackground               !< subroutine that initializes the background of designer GBD.
         procedure :: solve_designer_equations        => EFTCAMBDesignerGBDSolveDesignerEquations       !< subroutine that solves the designer GBD background equations.
-        !procedure :: find_initial_conditions         => EFTCAMBDesignerGBDFindInitialConditions        !< subroutine that solves the background equations several time to determine the values of the initial conditions.
+
+        ! coupling function
         procedure :: omega_phi                       => EFTCAMBDesignerGBDCoupling                      !< function that computes omega(phi) and its derivatives
 
         ! utility functions:
@@ -1024,6 +1025,6 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
 
-end module EFTCAMB_designer_fR
+end module EFTCAMB_designer_GBD
 
 !----------------------------------------------------------------------------------------
