@@ -184,13 +184,15 @@ contains
 
         class(EFTCAMB_GBD_designer)                            :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
-        real(dl), dimension(self%parameter_number -1)          :: temp
+        real(dl), dimension(self%parameter_number -3)          :: temp
         integer                                                :: i
 
-        self%B0 = array(1)
+        self%phi_ini    = array(1)
+        self%dphi_ini   = array(2)
+        self%xi         = array(3)
 
         do i = 1, self%parameter_number -1
-            temp(i) = array(i+1)
+            temp(i) = array(i+3)
         end do
         call self%DesGBDwDE%init_parameters(temp)
 
@@ -355,19 +357,6 @@ contains
         !> Re-introducing this at some point
         !> debug code:
         if ( DebugEFTCAMB ) then
-            !> print the function B0(A). This is used to debug the initial conditions part.
-        !    call CreateTxtFile( './debug_designer_GBD_B.dat', 34 )
-        !    print*, 'EFTCAMB DEBUG ( GBD designer ): Printing phi results'
-        !    TempMin      = -100._dl
-        !    TempMax      = +100._dl
-        !    Debug_MaxNum = 1000
-        !    do Debug_n = 1, Debug_MaxNum
-        !        debug_A = TempMin +REAL(Debug_n-1)*(TempMax-TempMin)/REAL(Debug_MaxNum-1)
-        !        call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.True., success=success )
-        !        write(34,*) debug_A, B0
-        !    end do
-        !    close(34)
-        !    ! prints f(R) quantities.
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
             call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
             call self%solve_designer_equations( params_cache, success=success )
