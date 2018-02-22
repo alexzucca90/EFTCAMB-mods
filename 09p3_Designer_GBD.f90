@@ -133,7 +133,11 @@ contains
         !> read coupling type
         self%coupling_type      = Ini_Read_Int_File( Ini, 'GBD_coupling_type', 3)
 
-    end subroutine EFTCAMBDesignerFRReadModelSelectionFromFile
+        !> read initial scale factor
+        self%x_initial          = Ini_Read_Double_File( Ini, 'GBD_a_initial', 1.d-8)
+        self%x_initial          = log(self%x_initial)
+
+    end subroutine EFTCAMBDesignerGBDReadModelSelectionFromFile
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that allocates the model selection.
@@ -212,7 +216,7 @@ contains
         self%phi_ini = Ini_Read_Double_File( Ini, 'GBD_phi_ini', 0._dl)
 
         !> read dphi_ini
-        self%phi_ini = Ini_Read_Double_File( Ini, 'GBD_phi_ini', 0._dl)
+        self%phi_ini = Ini_Read_Double_File( Ini, 'GBD_dphi_ini', 0._dl)
 
         !> read xi
         self%xi      = Ini_Read_Double_File( Ini, 'GBD_xi',      1._dl)
@@ -358,10 +362,12 @@ contains
         !> Re-introducing this at some point
         !> debug code:
         if ( DebugEFTCAMB ) then
+        !if ( .true. ) then
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
             call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
             call self%solve_designer_equations( params_cache, success=success )
             close(33)
+            print*, 'EFTCAMB DEBUG ( GBD designer ): GBD results printed'
         end if
 
 
@@ -369,6 +375,9 @@ contains
 
         !> solve the background equations and store the solution:
         call self%solve_designer_equations( params_cache, success=success )
+
+        write(*,'(a)') "EFTCAMB designer GBD background solver. Equation solved."
+        write(*,"(L1)") success
 
     end subroutine EFTCAMBDesignerGBDInitBackground
 
@@ -385,10 +394,13 @@ contains
         integer, parameter :: num_eq = 2   !<  Number of equations
 
         real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
-        real(dl) :: Omegarad_EFT, EquivalenceScale_fR, Ratio_fR, Initial_B_fR, Initial_C_fR
+        real(dl) :: Omegarad_EFT, EquivalenceScale_GBD, Ratio_GBD, Initial_B_fR, Initial_C_fR
         real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x
 
         real(dl) :: y(num_eq+1), ydot(num_eq+1)
+        real(dl) :: dN
+
+        integer :: i, i_y
 
         !integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
         !real(dl) :: rtol, atol, t1, t2, B
@@ -418,7 +430,7 @@ contains
         ydot = 0._dl
 
         !> fill the interpolated EFT functions here
-        dN = (x_final - x_initial)/designer_num_points
+        dN = (self%x_final - self%x_initial)/self%designer_num_points
 
         ! 3) Solve the equation of motion
         !> defining the time-step
@@ -431,10 +443,12 @@ contains
             call gl10(num_eq+1,derivs, y, dN)
 
             !> check if the solution is acceptable
-            if (.not.(y .ge. 0._dl .or. y .le. 0._dl)) then
-                success = .False.
-                return
-            end if
+            do i_y=1, num_eq+1
+                if (.not. ( (y(i_y) .ge. 0._dl) .or. (y(i_y) .le. 0._dl))) then
+                    success = .False.
+                    return
+                end if
+            end do
 
             !> filling the interpolation arrays
             call output(num_eq+1,y,i)
@@ -549,11 +563,11 @@ contains
             real(dl) :: ydot(num)                           !< array of derivatives of the system
             real(dl) :: EFT_E_gfun, EFT_E_gfunp, EFT_E_gfunpp, EFT_E_gfunppp !< effective dark energy variables
 
-            real(dl) :: om, omp ompp, omppp         !< coupling function and its derivatives
+            real(dl) :: om, omp, ompp, omppp         !< coupling function and its derivatives
 
             !> some massive neutrinos variables
             real(dl) :: rhonu_tot, presnu_tot, presnudot_tot, presnudotdot_tot
-            real(dl) :: rhonu, presnu, grhormass_t
+            real(dl) :: rhonu, presnu, grhormass_t, presnudot, presnudotdot
 
             real(dl) :: Em,    Er,    Enu,    X     !< normalized energy densities
             real(dl) :: Em_p,  Er_p,  Enu_p,  X_p   !< derivatives of normalized energy densities
@@ -564,7 +578,7 @@ contains
             logical  :: is_open
 
             !> other parameters
-            real(dl) :: a, N, phi, dphi, ddphi
+            real(dl) :: a, N, phi, dphi, ddphi, dddphi
             real(dl) :: adotoa, Hdot, adotdotoa
             real(dl) :: calF, V, Vprime, Vdot
             real(dl) :: Etot
@@ -588,10 +602,10 @@ contains
             Er = OmegaRad_EFT * exp(-4._dl*N)
 
             !> compute the function g(x) and its derivatives:
-            EFT_E_gfun    = -(Log( self%DesfRwDE%integral(a) ) -2._dl*x)/3._dl
-            EFT_E_gfunp   = 1._dl +self%DesfRwDE%value(a)
-            EFT_E_gfunpp  = Exp(x)*self%DesfRwDE%first_derivative(a)
-            EFT_E_gfunppp = Exp(x)*self%DesfRwDE%first_derivative(a) +Exp(2._dl*x)*self%DesfRwDE%second_derivative(a)
+            EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*x)/3._dl
+            EFT_E_gfunp   = 1._dl +self%DesGBDwDE%value(a)
+            EFT_E_gfunpp  = Exp(x)*self%DesGBDwDE%first_derivative(a)
+            EFT_E_gfunppp = Exp(x)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*x)*self%DesGBDwDE%second_derivative(a)
 
             !> compute the normalized dark energy density
             X       = Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
@@ -621,7 +635,8 @@ contains
             end if
 
             !> calculate H, Hdot and adotdotoa
-            adotoa      = a * params_cache%h0_Mpc* sqrt(Em+Er+Enu+X)
+            Etot = Em+Er+Enu+X
+            adotoa      = a * params_cache%h0_Mpc* sqrt(Etot)
             Hdot        = a**2 * params_cache%h0_Mpc**2 * ( (Em+Er+Enu+X) + &
                           0.5_dl * (-3._dl * Em - 4._dl*Er + Enu_p + X_p) )
             adotdotoa   = Hdot + adotoa**2
@@ -681,7 +696,7 @@ contains
                     Enu     = Enu   + params_cache%grhormass(nu_i)/3._dl/a**4/params_cache%h0_Mpc**2*rhonu
                     Enu_p   = Enu_p - params_cache%grhormass(nu_i)/params_cache%h0_Mpc**2/a**4*(rhonu +presnu)
                     Enu_pp  = Enu_pp + 3._dl/params_cache%h0_Mpc**2*params_cache%grhormass(nu_i)/a**4*(rhonu +presnu)&
-                                & -grhormass_t*(presnudot -4._dl*adotoa*presnu)/params_cache%h0_Mpc**3/sqrt(EFunction)/a**3
+                                & -grhormass_t*(presnudot -4._dl*adotoa*presnu)/params_cache%h0_Mpc**3/sqrt(Etot)/a**3
                     Enu_ppp = Enu_ppp -9._dl/params_cache%h0_Mpc**2*params_cache%grhormass(nu_i)/a**4*(rhonu +presnu)&
                                 & +(3._dl/adotoa/params_cache%h0_Mpc**2/a**2+Hdot/adotoa**3/params_cache%h0_Mpc**2/a**2)&
                                 &*grhormass_t*(presnudot -4._dl*adotoa*presnu)&
@@ -713,7 +728,7 @@ contains
 
             !> Filling the EFT functions:
             !> Omega
-            self%EFTOmega%y(ind)    = om
+            self%EFTOmega%y(ind)    = om-1._dl
             self%EFTOmega%yp(ind)   = omp * dphi / a
             self%EFTOmega%ypp(ind)  = (ompp * dphi**2 + omp*ddphi - omp * dphi)/a**2
             self%EFTOmega%yppp(ind) = (omppp * dphi**3 + 3._dl * ompp * dphi * ddphi - 3._dl* ompp*dphi**2 &
@@ -730,6 +745,7 @@ contains
 
             !> Debug info
             if ( DebugEFTCAMB ) then
+            !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
                     write (33,'(20E15.5)') a, phi, dphi, ddphi, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
@@ -983,7 +999,7 @@ contains
         eft_cache%grhov_t = eft_par_cache%grhov*self%DesGBDwDE%integral(a)
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
 
-    end subroutine EFTCAMBDesignerFRComputeAdotoa
+    end subroutine EFTCAMBDesignerGBDComputeAdotoa
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the two derivatives wrt conformal time of H.

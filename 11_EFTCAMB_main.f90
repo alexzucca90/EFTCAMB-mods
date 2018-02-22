@@ -36,6 +36,7 @@ module EFTCAMB_main
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_Reparametrized_Horndeski
     use EFTCAMB_designer_fR
+    use EFTCAMB_designer_GBD
     use EFTCAMB_designer_mc_quintessence
     use EFTCAMB_LE_Horava
 
