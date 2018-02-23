@@ -42,8 +42,9 @@ module EFTCAMB_designer_GBD
     use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
-    !> adding the interpolated function
+    !> adding the interpolated function and the reconstructed dark energy
     use EFTCAMB_interpolated_function_1D
+    use EFTCAMB_reconstructed_fit_parametrizations_1D
 
     implicit none
 
@@ -171,6 +172,9 @@ contains
             case(6)
                 allocate( interpolated_function_1D::self%DesGBDwDE )
                 call self%DesGBDwDE%set_param_names(['wDE_filename  '])
+            case(7)
+                allocate( reconstructed_fit_parametrization_1D::self%DesGBDwDE)
+                call self%DesGBDwDE%set_param_names(['GBDp1','GBDp2', 'GBDp3', 'GBDp4', 'GBDp5', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','\Omega_{\Lambda}'])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -402,14 +406,6 @@ contains
 
         integer :: i, i_y
 
-        !integer  :: itol, itask, istate, iopt, LRN, LRS, LRW, LIS, LIN, LIW, JacobianMode, i
-        !real(dl) :: rtol, atol, t1, t2, B
-        !real(dl), allocatable :: rwork(:)
-        !integer,  allocatable :: iwork(:)
-
-        ! digedt the input:
-        !if ( .not. present(only_B0) ) only_B0 = .False.
-
         ! 1) Cosmological parameters:
         Omegam_EFT         = params_cache%omegab + params_cache%omegac
         Omegavac_EFT       = params_cache%omegav
@@ -437,7 +433,7 @@ contains
 
 
         !> Loop to fill the interpolation arrays
-        do  i = 1, self%EFTOmega%num_points-1
+        do  i = 1, self%EFTOmega%num_points
 
             !> calling the solver, in this case gl10
             call gl10(num_eq+1,derivs, y, dN)

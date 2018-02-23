@@ -178,9 +178,9 @@ contains
         class(reconstructed_fit_parametrization_1D)        :: self      !< the base class
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ReconstructedFitParametrized1DValue                           !< the output value
+        real(dl) :: ReconstructedFitParametrized1DValue                 !< the output value
 
-        !ReconstructedFitParametrized1DValue = self%w0 +self%wa*x +0.5_dl*self%w2*x**2 +self%w3/6._dl*x**3
+
 
         !> Maple output
         !> extra parameters
@@ -229,9 +229,7 @@ contains
         class(reconstructed_fit_parametrization_1D)                     :: self      !< the base class
         real(dl), intent(in)                                            :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional              :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ReconstructedFitParametrized1DFirstDerivative                 !< the output value
-
-        !ReconstructedFitParametrized1DFirstDerivative = self%wa +self%w2*x +0.5_dl*self%w3*x**2
+        real(dl) :: ReconstructedFitParametrized1DFirstDerivative                    !< the output value
 
         !> Maple output
         !> some extra variables for optimization
@@ -277,12 +275,10 @@ contains
 
         implicit none
 
-        class(reconstructed_fit_parametrization_1D)                   :: self      !< the base class
+        class(reconstructed_fit_parametrization_1D)        :: self      !< the base class
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ReconstructedFitParametrized1DSecondDerivative                !< the output value
-
-        !ReconstructedFitParametrized1DSecondDerivative = self%w2 +self%w3*x
+        real(dl) :: ReconstructedFitParametrized1DSecondDerivative      !< the output value
 
         !> Maple output
         !> extra varibales
@@ -348,12 +344,10 @@ contains
 
         implicit none
 
-        class(reconstructed_fit_parametrization_1D)                   :: self      !< the base class
+        class(reconstructed_fit_parametrization_1D)        :: self      !< the base class
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ReconstructedFitParametrized1DThirdDerivative                 !< the output value
-
-        !ReconstructedFitParametrized1DThirdDerivative = self%w3
+        real(dl) :: ReconstructedFitParametrized1DThirdDerivative       !< the output value
 
         !> Maple output
         !> extra variables
@@ -422,12 +416,10 @@ contains
 
         implicit none
 
-        class(reconstructed_fit_parametrization_1D)                   :: self      !< the base class
+        class(reconstructed_fit_parametrization_1D)        :: self      !< the base class
         real(dl), intent(in)                               :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: ReconstructedFitParametrized1DIntegral                        !< the output value
-
-        !ReconstructedFitParametrized1DIntegral = x**(-1._dl -3._dl*self%w0)*Exp(-1._dl/12._dl*(x -1._dl)*(9._dl*(1._dl+x)*self%w2 +2._dl*(1._dl +x +x**2)*self%w3 +36._dl*self%wa))
+        real(dl) :: ReconstructedFitParametrized1DIntegral              !< the output value
 
         !> Maple output
         !> extra variables
