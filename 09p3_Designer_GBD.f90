@@ -77,7 +77,7 @@ module EFTCAMB_designer_GBD
         type(equispaced_linear_interpolate_function_1D) :: EFTc           !< The interpolated funtcion c (and derivatives).
 
         ! some designer parameters:
-        integer  :: designer_num_points = 1000                            !< Number of points sampled by the designer code.
+        integer  :: designer_num_points = 10000                           !< Number of points sampled by the designer code.
         real(dl) :: x_initial           = log(10._dl**(-8._dl))           !< log(a start)
         real(dl) :: x_final             = 0.0_dl                          !< log(a final)
 
@@ -174,7 +174,7 @@ contains
                 call self%DesGBDwDE%set_param_names(['wDE_filename  '])
             case(7)
                 allocate( reconstructed_fit_parametrization_1D::self%DesGBDwDE)
-                call self%DesGBDwDE%set_param_names(['GBDp1','GBDp2', 'GBDp3', 'GBDp4', 'GBDp5', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','\Omega_{\Lambda}'])
+                call self%DesGBDwDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -405,6 +405,8 @@ contains
         real(dl) :: dN
 
         integer :: i, i_y
+
+        success = .True.
 
         ! 1) Cosmological parameters:
         Omegam_EFT         = params_cache%omegab + params_cache%omegac
@@ -744,7 +746,7 @@ contains
             !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
-                    write (33,'(20E15.5)') a, phi, dphi, ddphi, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
                 end if
             end if
 

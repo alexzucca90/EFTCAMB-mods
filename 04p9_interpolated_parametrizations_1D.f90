@@ -36,7 +36,7 @@ module EFTCAMB_interpolated_function_1D
 
     implicit none
 
-    integer, parameter :: number_of_points = 10000
+    integer, parameter :: number_of_points = 1000
 
     private
 
@@ -202,7 +202,10 @@ subroutine InterpolatedFunction1DInitialization(self)
     class(interpolated_function_1D) :: self
     integer                         :: i
 
-    ! Open the file
+    real(dl)                        :: a_start, a_end, a !< output parameters
+    real(dl)                        :: f, fprime, fprimeprime
+
+    !> Open the file
     open(unit=7, file = TRIM(self%file), status = "unknown")
 
     do i  = 1, number_of_points
@@ -211,16 +214,33 @@ subroutine InterpolatedFunction1DInitialization(self)
                     self%InterpolationArray_deriv1(i), self%InterpolationArray_int(i)
     end do
 
-    ! close the file
+    !> close the file
     close(7)
 
-    ! initialize the interpolations
+    !> initialize the interpolations
     call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_value,  number_of_points, self%InterpolationArray_deriv2)
     call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_deriv1, number_of_points, self%InterpolationArray_deriv3)
     call GBD_spline_double(self%InterpolationArray_a, self%InterpolationArray_int,    number_of_points, self%InterpolationArray_int2)
 
-    ! done
+    !> done
     self%is_function_loaded = .true.
+
+    !> output test
+    open(unit=1, file = TRIM(self%name) // '_interpolation.dat', status = 'unknown')
+    a_start = minval(self%InterpolationArray_a)
+    a_end   = maxval(self%InterpolationArray_a)
+
+    do i = 0, 1000
+        a           = a_start+i*(a_end-a_start)/1000
+        f           = GBD_spline_val(a, self%InterpolationArray_a, self%InterpolationArray_value,&
+                            self%InterpolationArray_deriv2, number_of_points)
+        fprime      = GBD_spline_val(a, self%InterpolationArray_a, self%InterpolationArray_deriv1,&
+                                        self%InterpolationArray_deriv3, number_of_points)
+        fprimeprime = GBD_spline_1der(a, self%InterpolationArray_a,  self%InterpolationArray_deriv1,&
+                                        self%InterpolationArray_deriv3, number_of_points)
+        write(1,*) a, f, fprime, fprimeprime
+    end do
+    close(1)
 
 end subroutine InterpolatedFunction1DInitialization
 
@@ -240,6 +260,12 @@ function InterpolatedFunction1DValue( self, x, eft_cache )
 
     InterpolatedFunction1DValue = GBD_spline_val(x, self%InterpolationArray_a, self%InterpolationArray_value,&
                                                     self%InterpolationArray_deriv2, number_of_points)
+
+    !> this was just an output for tests.
+    !if(x .le. 1.d-6 .and. self%name == 'EFTOmega') then
+    !write(*,*) self%name, '(',x,') = ', InterpolatedFunction1DValue
+    !pause
+    !end if
 
 end function InterpolatedFunction1DValue
 
