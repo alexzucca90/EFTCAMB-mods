@@ -427,12 +427,9 @@ contains
         y(3) = self%dphi_ini
         ydot = 0._dl
 
-        !> fill the interpolated EFT functions here
-        dN = (self%x_final - self%x_initial)/self%designer_num_points
-
         ! 3) Solve the equation of motion
         !> defining the time-step
-
+        dN = (self%x_final - self%x_initial)/self%designer_num_points
 
         !> Loop to fill the interpolation arrays
         do  i = 1, self%EFTOmega%num_points
@@ -540,7 +537,7 @@ contains
                 dphi = pi
 
                 !> phi prime prime
-                ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - X_p)/omp/(Em+Er+Enu+X) &
+                ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X) &
                         - (1._dl + ompp)*dphi**2/omp + (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X))*dphi
 
             end associate
@@ -600,10 +597,11 @@ contains
             Er = OmegaRad_EFT * exp(-4._dl*N)
 
             !> compute the function g(x) and its derivatives:
-            EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*x)/3._dl
+            EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*N)/3._dl
             EFT_E_gfunp   = 1._dl +self%DesGBDwDE%value(a)
-            EFT_E_gfunpp  = Exp(x)*self%DesGBDwDE%first_derivative(a)
-            EFT_E_gfunppp = Exp(x)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*x)*self%DesGBDwDE%second_derivative(a)
+            EFT_E_gfunpp  = Exp(N)*self%DesGBDwDE%first_derivative(a)
+            EFT_E_gfunppp = Exp(N)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*N)*self%DesGBDwDE%second_derivative(a)
+
 
             !> compute the normalized dark energy density
             X       = Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
@@ -633,7 +631,7 @@ contains
             end if
 
             !> calculate H, Hdot and adotdotoa
-            Etot = Em+Er+Enu+X
+            Etot        = Em+Er+Enu+X
             adotoa      = a * params_cache%h0_Mpc* sqrt(Etot)
             Hdot        = a**2 * params_cache%h0_Mpc**2 * ( (Em+Er+Enu+X) + &
                           0.5_dl * (-3._dl * Em - 4._dl*Er + Enu_p + X_p) )
@@ -746,7 +744,11 @@ contains
             !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
-                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    !write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa,(1._dl + ompp)/omp,                   &
+                                            (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X)),                 &
+                                            ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X),&
+                                            X_p, Em, Er, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
                 end if
             end if
 
