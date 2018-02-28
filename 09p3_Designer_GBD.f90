@@ -495,14 +495,15 @@ contains
                 Er = OmegaRad_EFT * exp(-4._dl*N)
 
                 !> compute the function g(x) and its derivatives:
-                EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*x)/3._dl
+                EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*N)/3._dl
                 EFT_E_gfunp   = 1._dl +self%DesGBDwDE%value(a)
-                EFT_E_gfunpp  = Exp(x)*self%DesGBDwDE%first_derivative(a)
-                EFT_E_gfunppp = Exp(x)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*x)*self%DesGBDwDE%second_derivative(a)
+                EFT_E_gfunpp  = Exp(N)*self%DesGBDwDE%first_derivative(a)
+                EFT_E_gfunppp = Exp(N)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*N)*self%DesGBDwDE%second_derivative(a)
 
                 !> compute the normalized dark energy density
                 X   = Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
                 X_p = -3._dl * Omegavac_EFT* exp(-3._dl*EFT_E_gfun)* EFT_E_gfunp
+
 
                 !> compute massive neutrinos contribution:
                 rhonu_tot   = 0._dl
@@ -539,6 +540,9 @@ contains
                 !> phi prime prime
                 ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X) &
                         - (1._dl + ompp)*dphi**2/omp + (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X))*dphi
+
+                !write(*,*) "term:",((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X)
+                !write(*,*) "Em, Er, Omega,X, Xprime", Em, Er, om, X, X_p
 
             end associate
 
@@ -642,6 +646,9 @@ contains
 
             !> extract ddphi
             ddphi = ydot(3)
+
+            !write(*,*) "a,ddphi:",a,ddphi
+            !pause
 
             !> calculating the potential - needed for the function Lambda
             !> begin with {\cal F} in the notes
