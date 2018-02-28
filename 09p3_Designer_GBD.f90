@@ -541,9 +541,6 @@ contains
                 ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X) &
                         - (1._dl + ompp)*dphi**2/omp + (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X))*dphi
 
-                !write(*,*) "term:",((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X)
-                !write(*,*) "Em, Er, Omega,X, Xprime", Em, Er, om, X, X_p
-
             end associate
 
         end subroutine derivs
@@ -647,9 +644,6 @@ contains
             !> extract ddphi
             ddphi = ydot(3)
 
-            !write(*,*) "a,ddphi:",a,ddphi
-            !pause
-
             !> calculating the potential - needed for the function Lambda
             !> begin with {\cal F} in the notes
             calF = om - dphi**2 / 6._dl + omp * dphi
@@ -751,11 +745,12 @@ contains
             !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
-                    !write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
-                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa,(1._dl + ompp)/omp,                   &
-                                            (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X)),                 &
-                                            ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X),&
-                                            X_p, Em, Er, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    !> the following was used to check the solutions and the pieces of the differential equation
+                    !write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa,(1._dl + ompp)/omp,                   &
+                    !                        (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X)),                 &
+                    !                        ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X),&
+                    !                        X_p, Em, Er, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
                 end if
             end if
 
