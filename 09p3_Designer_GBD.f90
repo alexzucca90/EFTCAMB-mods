@@ -220,7 +220,7 @@ contains
         self%phi_ini = Ini_Read_Double_File( Ini, 'GBD_phi_ini', 0._dl)
 
         !> read dphi_ini
-        self%phi_ini = Ini_Read_Double_File( Ini, 'GBD_dphi_ini', 0._dl)
+        self%dphi_ini = Ini_Read_Double_File( Ini, 'GBD_dphi_ini', 0._dl)
 
         !> read xi
         self%xi      = Ini_Read_Double_File( Ini, 'GBD_xi',      1._dl)
@@ -369,6 +369,7 @@ contains
         !if ( .true. ) then
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
             call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
+            write(33,*) "#  a,  phi,    dphi,   ddphi,  V,  Omega,  c,  Lambda"
             call self%solve_designer_equations( params_cache, success=success )
             close(33)
             print*, 'EFTCAMB DEBUG ( GBD designer ): GBD results printed'
@@ -434,8 +435,10 @@ contains
         !> Loop to fill the interpolation arrays
         do  i = 1, self%EFTOmega%num_points
 
+
             !> calling the solver, in this case gl10
             call gl10(num_eq+1,derivs, y, dN)
+
 
             !> check if the solution is acceptable
             do i_y=1, num_eq+1
