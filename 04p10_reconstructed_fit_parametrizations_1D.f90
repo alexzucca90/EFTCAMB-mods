@@ -408,30 +408,30 @@ contains
 
         !> Maple output
         !> extra variables
-        real(dl) :: a
         real(dl) :: t1
         real(dl) :: t10
         real(dl) :: t12
         real(dl) :: t14
-        real(dl) :: t22
-        real(dl) :: t3
+        real(dl) :: t2
+        real(dl) :: t20
         real(dl) :: t4
         real(dl) :: t6
         real(dl) :: t9
 
         !> defining the extra variables
         t1 = -a + self%P4
-        t3 = tanh(self%P5 * t1)
-        t4 = t1 ** 2
-        t6 = exp(-self%P3 * t4)
-        t9 = -1 + self%P4
+        t2 = t1 ** 2
+        t4 = exp(-self%P3 * t2)
+        t6 = tanh(self%P5 * t1)
+        t9 = -1.d0 + self%P4
         t10 = t9 ** 2
-        t12 = exp(-self%P3 * t10)
+        t12 = exp(-self%P3 * dble(t10))
         t14 = tanh(self%P5 * t9)
-        t22 = log((self%P2 * t12 * t14 - self%P2 * t3 * t6 + self%P1 * t14 - self%P1 * t3 + self%omegaL) / self%omegaL)
+        t20 = a ** 2
 
         !> Integral
-        ReconstructedFitParametrized1DIntegral = -t22 / 0.3D1
+        ReconstructedFitParametrized1DIntegral = (self%P2 * t12 * t14 - self%P2 * t4 * t6 + self%P1 * t14 - self%P1 *   &
+                                                    t6 + self%omegaL) * t20 / self%omegaL
 
     end function ReconstructedFitParametrized1DIntegral
 
