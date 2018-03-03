@@ -180,41 +180,26 @@ contains
         type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: ReconstructedFitParametrized1DValue                 !< the output value
 
-
-
         !> Maple output
         !> extra parameters
-        real(dl) :: t1
-        real(dl) :: t12
         real(dl) :: t13
         real(dl) :: t15
         real(dl) :: t2
-        real(dl) :: t23
-        real(dl) :: t3
-        real(dl) :: t36
-        real(dl) :: t38
+        real(dl) :: t4
         real(dl) :: t5
-        real(dl) :: t6
 
         !> defining the extra parameters
-        t1 = self%P5 ** 2
-        t2 = x * t1
-        t3 = -x + self%P4
-        t5 = tanh(self%P5 * t3)
-        t6 = t5 ** 2
-        t12 = x ** 2
-        t13 = self%P3 * t12
-        t15 = self%P5 * (-self%P3 * self%P4 * x + t13 - 0.1D1 / 0.4D1)
-        t23 = self%P4 ** 2
-        t36 = t3 ** 2
-        t38 = exp(-self%P3 * t36)
+        t2 = -x + self%P4
+        t4 = tanh(self%P5 * t2)
+        t5 = t4 ** 2
+        t13 = t2 ** 2
+        t15 = exp(-self%P3 * t13)
 
         !> value of the function
-        ReconstructedFitParametrized1DValue = (0.2D1 / 0.3D1 * t2 * t6 * t5 - 0.4D1 / 0.3D1 * t15 * t6                          &
-                                             + 0.4D1 / 0.3D1 * (-t2 / 0.2D1 + (-0.2D1 * t13 * self%P4 + t12 * x *               &
-                                            self%P3 + (self%P3 * t23 - 0.1D1) * x + self%P4 / 0.2D1) * self%P3) * t5 + 0.4D1 /  &
-                                             0.3D1 * t15) * self%P2 * t38 + (0.2D1 / 0.3D1 * x * self%P5 * t5 + 0.1D1           &
-                                            / 0.3D1) * self%P1 * self%P5 * (t5 + 0.1D1) * (t5 - 0.1D1)
+         ReconstructedFitParametrized1DValue = -0.2D1 / 0.3D1 * x * self%P2 * (-self%P5 * t5 / 0.2D1 - self%P3 * t2                     &
+                                                * t4 + self%P5 / 0.2D1) * t15 + t5 * self%P1 * self%P5 * x / 0.3D1 - self%P1 * self%P5  &
+                                                * x / 0.3D1 - 0.1D1
+
 
 
 
