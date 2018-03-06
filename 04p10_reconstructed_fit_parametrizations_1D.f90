@@ -182,26 +182,54 @@ contains
 
         !> Maple output
         !> extra parameters
-        real(dl) :: t13
-        real(dl) :: t15
-        real(dl) :: t2
-        real(dl) :: t4
-        real(dl) :: t5
+        !real(dl) :: t13
+        !real(dl) :: t15
+        !real(dl) :: t2
+        !real(dl) :: t4
+        !real(dl) :: t5
 
         !> defining the extra parameters
-        t2 = -x + self%P4
-        t4 = tanh(self%P5 * t2)
-        t5 = t4 ** 2
-        t13 = t2 ** 2
-        t15 = exp(-self%P3 * t13)
+        !t2 = -x + self%P4
+        !t4 = tanh(self%P5 * t2)
+        !t5 = t4 ** 2
+        !t13 = t2 ** 2
+        !t15 = exp(-self%P3 * t13)
 
         !> value of the function
-         ReconstructedFitParametrized1DValue = -0.2D1 / 0.3D1 * x * self%P2 * (-self%P5 * t5 / 0.2D1 - self%P3 * t2                     &
-                                                * t4 + self%P5 / 0.2D1) * t15 + t5 * self%P1 * self%P5 * x / 0.3D1 - self%P1 * self%P5  &
-                                                * x / 0.3D1 - 0.1D1
+        !ReconstructedFitParametrized1DValue = -0.2D1 / 0.3D1 * x * self%P2 * (-self%P5 * t5 / 0.2D1 - self%P3 * t2                     &
+        !                                        * t4 + self%P5 / 0.2D1) * t15 + t5 * self%P1 * self%P5 * x / 0.3D1 - self%P1 * self%P5  &
+        !                                        * x / 0.3D1 - 0.1D1
 
 
+        !> MAPLE output.
+        !> extra variables for optimization
+        real(dl) :: t2
+        real(dl) :: t3
+        real(dl) :: t5
+        real(dl) :: t8
+        real(dl) :: t13
+        real(dl) :: t15
+        real(dl) :: t21
+        real(dl) :: t22
+        real(dl) :: t24
+        real(dl) :: t28
 
+
+        !> defining the extra variables
+        t2 = x - self%P4
+        t3 = t2 ** 2
+        t5 = exp(-self%P3 * t3)
+        t8 = tanh(self%P5 * t2)
+        t13 = self%P2 * t5 + self%P1
+        t15 = t8 ** 2
+        t21 = 1._dl - self%P4
+        t22 = t21 ** 2
+        t24 = exp(-self%P3 * t22)
+        t28 = tanh(self%P5 * t21)
+
+        !> value of the function
+        ReconstructedFitParametrized1DValue = -x * (-0.2D1 * self%P2 * self%P3 * t2 * t5 * t8 + t13 * self%P5 * (0.1D1 - t15))/&
+                                                (t13 * t8 + self%omegaL - (self%P2 * t24 + self%P1) * t28) / 0.3D1 - 0.1D1
 
     end function ReconstructedFitParametrized1DValue
 
@@ -218,37 +246,85 @@ contains
 
         !> Maple output
         !> some extra variables for optimization
-        real(dl) :: t1
-        real(dl) :: t12
-        real(dl) :: t13
-        real(dl) :: t15
-        real(dl) :: t2
-        real(dl) :: t23
-        real(dl) :: t3
-        real(dl) :: t36
-        real(dl) :: t38
-        real(dl) :: t5
-        real(dl) :: t6
+        !real(dl) :: t1
+        !real(dl) :: t12
+        !real(dl) :: t13
+        !real(dl) :: t15
+        !real(dl) :: t2
+        !real(dl) :: t23
+        !real(dl) :: t3
+        !real(dl) :: t36
+        !real(dl) :: t38
+        !real(dl) :: t5
+        !real(dl) :: t6
 
         !> Defining the extra variables
-        t1 = self%P5 ** 2
-        t2 = x * t1
-        t3 = -x + self%P4
-        t5 = tanh(self%P5 * t3)
-        t6 = t5 ** 2
-        t12 = x ** 2
-        t13 = self%P3 * t12
-        t15 = self%P5 * (-self%P3 * self%P4 * x + t13 - 0.1D1 / 0.4D1)
-        t23 = self%P4 ** 2
-        t36 = t3 ** 2
-        t38 = exp(-self%P3 * t36)
+        !t1 = self%P5 ** 2
+        !t2 = x * t1
+        !t3 = -x + self%P4
+        !t5 = tanh(self%P5 * t3)
+        !t6 = t5 ** 2
+        !t12 = x ** 2
+        !t13 = self%P3 * t12
+        !t15 = self%P5 * (-self%P3 * self%P4 * x + t13 - 0.1D1 / 0.4D1)
+        !t23 = self%P4 ** 2
+        !t36 = t3 ** 2
+        !t38 = exp(-self%P3 * t36)
 
         !> First Derivative
-        ReconstructedFitParametrized1DFirstDerivative = (0.2D1 / 0.3D1 * t2 * t6 * t5 - 0.4D1 / 0.3D1                                       &
-                                                        * t15 * t6 + 0.4D1 / 0.3D1 * (-t2 / 0.2D1 + (-0.2D1 * t13 * self%P4 +               &
-                                                        t12 * x * self%P3 + (self%P3 * t23 - 0.1D1) * x + self%P4 / 0.2D1) * self%P3) * t5  &
-                                                        + 0.4D1 / 0.3D1 * t15) * self%P2 * t38 + (0.2D1 / 0.3D1 * x * self%P5 * t5          &
-                                                        + 0.1D1 / 0.3D1) * self%P1 * self%P5 * (t5 + 0.1D1) * (t5 - 0.1D1)
+        !ReconstructedFitParametrized1DFirstDerivative = (0.2D1 / 0.3D1 * t2 * t6 * t5 - 0.4D1 / 0.3D1                                       &
+        !                                                * t15 * t6 + 0.4D1 / 0.3D1 * (-t2 / 0.2D1 + (-0.2D1 * t13 * self%P4 +               &
+        !                                                t12 * x * self%P3 + (self%P3 * t23 - 0.1D1) * x + self%P4 / 0.2D1) * self%P3) * t5  &
+        !                                                + 0.4D1 / 0.3D1 * t15) * self%P2 * t38 + (0.2D1 / 0.3D1 * x * self%P5 * t5          &
+        !                                                + 0.1D1 / 0.3D1) * self%P1 * self%P5 * (t5 + 0.1D1) * (t5 - 0.1D1)
+
+
+        !> Maple output
+        !> extra parameters
+        real(dl) :: t1
+        real(dl) :: t2
+        real(dl) :: t3
+        real(dl) :: t5
+        real(dl) :: t8
+        real(dl) :: t13
+        real(dl) :: t15
+        real(dl) :: t16
+        real(dl) :: t18
+        real(dl) :: t20
+        real(dl) :: t21
+        real(dl) :: t23
+        real(dl) :: t27
+        real(dl) :: t29
+        real(dl) :: t30
+        real(dl) :: t35
+        real(dl) :: t46
+        real(dl) :: t54
+        real(dl) :: t56
+
+        !> Defining the extra variables
+        t1 = self%P2 * self%P3
+        t2 = x - self%P4
+        t3 = t2 ** 2
+        t5 = exp(-self%P3 * t3)
+        t8 = tanh(self%P5 * t2)
+        t13 = self%P2 * t5 + self%P1
+        t15 = t8 ** 2
+        t16 = 0.1D1 - t15
+        t18 = -0.2D1 * t1 * t2 * t5 * t8 + t13 * self%P5 * t16
+        t20 = 1._dl - self%P4
+        t21 = t20 ** 2
+        t23 = exp(-self%P3 * t21)
+        t27 = tanh(self%P5 * t20)
+        t29 = t13 * t8 + self%omegaL - (self%P2 * t23 + self%P1) * t27
+        t30 = 0.1D1 / t29
+        t35 = self%P3 ** 2
+        t46 = self%P5 ** 2
+        t54 = t18 ** 2
+        t56 = t29 ** 2
+
+        !> first derivative
+        ReconstructedFitParametrized1DFirstDerivative = -t18 * t30 / 0.3D1 - x * (0.4D1 * self%P2 * t35 * t3 * t5 * t8 - 0.4D1 * t1 * t2 * t5 * self%P5 * t16 - &
+                                                        0.2D1 * t13 * t46* t8 * t16 - 0.2D1 * t1 * t5 * t8) * t30 / 0.3D1 + x * t54 / t56 / 0.3D1
 
 
 
@@ -267,58 +343,128 @@ contains
 
         !> Maple output
         !> extra varibales
+        !real(dl) :: t1
+        !real(dl) :: t11
+        !real(dl) :: t12
+        !real(dl) :: t13
+        !real(dl) :: t14
+        !real(dl) :: t20
+        !real(dl) :: t21
+        !real(dl) :: t25
+        !real(dl) :: t26
+        !real(dl) :: t32
+        !real(dl) :: t4
+        !real(dl) :: t40
+        !real(dl) :: t41
+        !real(dl) :: t6
+        !real(dl) :: t65
+        !real(dl) :: t67
+        !real(dl) :: t7
+        !real(dl) :: t70
+        !real(dl) :: t8
+
+        !> defining the extra variables
+        !t1 = self%P5 ** 2
+        !t4 = -x + self%P4
+        !t6 = tanh(self%P5 * t4)
+        !t7 = t6 ** 2
+        !t8 = t7 ** 2
+        !t11 = self%P3 * self%P4
+        !t12 = t11 * x
+        !t13 = x ** 2
+        !t14 = self%P3 * t13
+        !t20 = x * t1
+        !t21 = t13 * x
+        !t25 = self%P4 ** 2
+        !t26 = self%P3 * t25
+        !t32 = 0.3D1 / 0.2D1 * (t21 * self%P3 - dble(2 * t14 * self%P4) + (t26 - &
+        !        0.7D1 / 0.6D1) * x + 0.2D1 / 0.3D1 * self%P4) * self%P3
+        !t40 = t13 ** 2
+        !t41 = self%P3 ** 2
+        !t65 = t4 ** 2
+        !t67 = exp(-self%P3 * t65)
+        !t70 = x * self%P5
+
+        !> second derivative
+        !ReconstructedFitParametrized1DSecondDerivative = -0.8D1 / 0.3D1 * self%P2 * (-0.3D1 / 0.4D1 * x *                           &
+        !                                                t1 * self%P5 * t8 + 0.3D1 / 0.2D1 * t1 * (-0.1D1 / 0.3D1 - t12 +            &
+        !                                                t14) * t7 * t6 - (-t20 + t32) * self%P5 * t7 + ((0.1D1 / 0.2D1 - 0.3D1      &
+        !                                                / 0.2D1 * t14 + 0.3D1 / 0.2D1 * t12) * t1 + (0.1D1 / 0.2D1                  &
+        !                                                 + t40 * t41 - 0.3D1 * t21 * t41 * self%P4 + (-0.5D1 / 0.2D1 * self%P3 +    &
+        !                                                0.3D1 * t41 * t25) * t13 + (-t41 * t25 * self%P4 + 0.7D1 /                  &
+        !                                                0.2D1 * t11) * x - t26) * self%P3) * t6 + (-t20 / 0.4D1 + t32) * self%P5)   &
+        !                                                * t67 + (0.2D1 * t70 * t7 - 0.2D1 / 0.3D1 * t70 + 0.4D1 / 0.3D1 *           &
+        !                                                t6) * self%P1 * t1 * (t6 + 0.1D1) * (t6 - 0.1D1)
+
+
+        !> MAPLE output
+        !> extra variables
         real(dl) :: t1
+        real(dl) :: t2
+        real(dl) :: t3
+        real(dl) :: t5
+        real(dl) :: t7
         real(dl) :: t11
         real(dl) :: t12
-        real(dl) :: t13
-        real(dl) :: t14
+        real(dl) :: t17
+        real(dl) :: t19
         real(dl) :: t20
         real(dl) :: t21
         real(dl) :: t25
         real(dl) :: t26
-        real(dl) :: t32
-        real(dl) :: t4
+        real(dl) :: t28
+        real(dl) :: t31
+        real(dl) :: t33
+        real(dl) :: t34
+        real(dl) :: t36
         real(dl) :: t40
-        real(dl) :: t41
-        real(dl) :: t6
-        real(dl) :: t65
-        real(dl) :: t67
-        real(dl) :: t7
-        real(dl) :: t70
-        real(dl) :: t8
+        real(dl) :: t42
+        real(dl) :: t43
+        real(dl) :: t47
+        real(dl) :: t52
+        real(dl) :: t53
+        real(dl) :: t54
+        real(dl) :: t55
+        real(dl) :: t77
+        real(dl) :: t78
 
         !> defining the extra variables
-        t1 = self%P5 ** 2
-        t4 = -x + self%P4
-        t6 = tanh(self%P5 * t4)
-        t7 = t6 ** 2
-        t8 = t7 ** 2
-        t11 = self%P3 * self%P4
-        t12 = t11 * x
-        t13 = x ** 2
-        t14 = self%P3 * t13
-        t20 = x * t1
-        t21 = t13 * x
-        t25 = self%P4 ** 2
-        t26 = self%P3 * t25
-        t32 = 0.3D1 / 0.2D1 * (t21 * self%P3 - dble(2 * t14 * self%P4) + (t26 - &
-                0.7D1 / 0.6D1) * x + 0.2D1 / 0.3D1 * self%P4) * self%P3
-        t40 = t13 ** 2
-        t41 = self%P3 ** 2
-        t65 = t4 ** 2
-        t67 = exp(-self%P3 * t65)
-        t70 = x * self%P5
+        t1 = self%P2 * self%P3
+        t2 = x - self%P4
+        t3 = t2 ** 2
+        t5 = exp(-self%P3 * t3)
+        t7 = tanh(self%P5 * t2)
+        t11 = self%P3 ** 2
+        t12 = self%P2 * t11
+        t17 = t1 * t2
+        t19 = t7 ** 2
+        t20 = 0.1D1 - t19
+        t21 = t5 * self%P5 * t20
+        t25 = self%P2 * t5 + self%P1
+        t26 = self%P5 ** 2
+        t28 = t7 * t20
+        t31 = 0.4D1 * t12 * t3 * t5 * t7 - 0.2D1 * t1 * t5 * t7 - 0.2D1 *t25 * t26 * t28 - 0.4D1 * t17 * t21
+        t33 = 1._dl - self%P4
+        t34 = t33 ** 2
+        t36 = exp(-self%P3 * t34)
+        t40 = tanh(self%P5 * t33)
+        t42 = t25 * t7 + self%omegaL - (self%P2 * t36 + self%P1) * t40
+        t43 = 0.1D1 / t42
+        t47 = t2 * t5 * t7
+        t52 = t25 * self%P5 * t20 - 0.2D1 * t1 * t47
+        t53 = t52 ** 2
+        t54 = t42 ** 2
+        t55 = 0.1D1 / t54
+        t77 = t25 * t26 * self%P5
+        t78 = t20 ** 2
 
         !> second derivative
-        ReconstructedFitParametrized1DSecondDerivative = -0.8D1 / 0.3D1 * self%P2 * (-0.3D1 / 0.4D1 * x *                           &
-                                                        t1 * self%P5 * t8 + 0.3D1 / 0.2D1 * t1 * (-0.1D1 / 0.3D1 - t12 +            &
-                                                        t14) * t7 * t6 - (-t20 + t32) * self%P5 * t7 + ((0.1D1 / 0.2D1 - 0.3D1      &
-                                                        / 0.2D1 * t14 + 0.3D1 / 0.2D1 * t12) * t1 + (0.1D1 / 0.2D1                  &
-                                                         + t40 * t41 - 0.3D1 * t21 * t41 * self%P4 + (-0.5D1 / 0.2D1 * self%P3 +    &
-                                                        0.3D1 * t41 * t25) * t13 + (-t41 * t25 * self%P4 + 0.7D1 /                  &
-                                                        0.2D1 * t11) * x - t26) * self%P3) * t6 + (-t20 / 0.4D1 + t32) * self%P5)   &
-                                                        * t67 + (0.2D1 * t70 * t7 - 0.2D1 / 0.3D1 * t70 + 0.4D1 / 0.3D1 *           &
-                                                        t6) * self%P1 * t1 * (t6 + 0.1D1) * (t6 - 0.1D1)
+        ReconstructedFitParametrized1DSecondDerivative = -0.2D1 / 0.3D1 * t31 * t43 + 0.2D1 / 0.3D1 * t53 * t55 - x *       &
+                                                        (-0.8D1 * self%P2 * t11 * self%P3 * t3 * t2 * t5 * t7 + 0.12D2      &
+                                                        * t17 * t5 * t26 * t28 + 0.12D2 * t12 * t3 * t21 + 0.4D1 * t77*     &
+                                                        t19 * t20 - 0.6D1 * t1 * t21 + 0.12D2 * t12 * t47 - 0.2D1 * t77*    &
+                                                        t78) * t43 / 0.3D1 + x * t31 * t55 * t52 - 0.2D1 / 0.3D1 * x * t53  &
+                                                        * t52 / t54 / t42
 
 
     end function ReconstructedFitParametrized1DSecondDerivative
@@ -336,61 +482,164 @@ contains
 
         !> Maple output
         !> extra variables
-        real(dl) :: t1
-        real(dl) :: t12
-        real(dl) :: t14
-        real(dl) :: t17
-        real(dl) :: t2
-        real(dl) :: t23
-        real(dl) :: t25
-        real(dl) :: t3
-        real(dl) :: t32
-        real(dl) :: t4
-        real(dl) :: t40
-        real(dl) :: t48
-        real(dl) :: t55
-        real(dl) :: t59
-        real(dl) :: t6
-        real(dl) :: t7
-        real(dl) :: t8
-        real(dl) :: t81
-        real(dl) :: t83
-        real(dl) :: t87
+        !real(dl) :: t1
+        !real(dl) :: t12
+        !real(dl) :: t14
+        !real(dl) :: t17
+        !real(dl) :: t2
+        !real(dl) :: t23
+        !real(dl) :: t25
+        !real(dl) :: t3
+        !real(dl) :: t32
+        !real(dl) :: t4
+        !real(dl) :: t40
+        !real(dl) :: t48
+        !real(dl) :: t55
+        !real(dl) :: t59
+        !real(dl) :: t6
+        !real(dl) :: t7
+        !real(dl) :: t8
+        !real(dl) :: t81
+        !real(dl) :: t83
+        !real(dl) :: t87
 
         !> defining the extra variables
-        t1 = self%P5 ** 2
-        t2 = t1 ** 2
-        t3 = x * t2
-        t4 = -x + self%P4
-        t6 = tanh(self%P5 * t4)
-        t7 = t6 ** 2
-        t8 = t7 ** 2
-        t12 = -t4
-        t14 = x * t12 * self%P3
-        t17 = t1 * self%P5
-        t23 = t12 ** 2
-        t25 = x * t23 * self%P3
-        t32 = t7 * t6
-        t40 = self%P3 ** 2
-        t48 = (0.9D1 / 0.16D2 + x * t23 * t12 * t40 - (0.21D2 / 0.8D1 * &
-            x - 0.9D1 / 0.8D1 * self%P4) * t12 * self%P3) * self%P3
-        t55 = 0.9D1 / 0.4D1 * self%P4
-        t59 = t23 ** 2
-        t81 = t4 ** 2
-        t83 = exp(-self%P3 * t81)
-        t87 = x * self%P5
+        !t1 = self%P5 ** 2
+        !t2 = t1 ** 2
+        !t3 = x * t2
+        !t4 = -x + self%P4
+        !t6 = tanh(self%P5 * t4)
+        !t7 = t6 ** 2
+        !t8 = t7 ** 2
+        !t12 = -t4
+        !t14 = x * t12 * self%P3
+        !t17 = t1 * self%P5
+        !t23 = t12 ** 2
+        !t25 = x * t23 * self%P3
+        !t32 = t7 * t6
+        !t40 = self%P3 ** 2
+        !t48 = (0.9D1 / 0.16D2 + x * t23 * t12 * t40 - (0.21D2 / 0.8D1 * &
+        !    x - 0.9D1 / 0.8D1 * self%P4) * t12 * self%P3) * self%P3
+        !t55 = 0.9D1 / 0.4D1 * self%P4
+        !t59 = t23 ** 2
+        !t81 = t4 ** 2
+        !t83 = exp(-self%P3 * t81)
+        !t87 = x * self%P5
 
         !> Third derivative
-        ReconstructedFitParametrized1DThirdDerivative = (0.8D1 * t3 * t8 * t6 - 0.16D2 / 0.3D1 * (-0.9D1                            &
-                                                        / 0.8D1 + 0.3D1 * t14) * t17 * t8 + 0.16D2 * t1 * (-0.5D1 / 0.6D1           &
-                                                        * x * t1 + (t25 - 0.5D1 / 0.4D1 * x + 0.3D1 / 0.4D1 * self%P4) * self%P3)   &
-                                                        * t32 - 0.32D2 / 0.3D1 * self%P5 * ((0.3D1 / 0.4D1 - 0.2D1 * t14) *         &
-                                                         t1 + t48) * t7 + 0.16D2 / 0.3D1 * (t3 - (0.3D1 * t25 - 0.15D2 / 0.4D1      &
-                                                        * x + t55) * self%P3 * t1 + (x * t59 * t40 - (0.9D1 / 0.2D1 * x -           &
-                                                         0.3D1 / 0.2D1 * self%P4) * t23 * self%P3 - t55 + 0.3D1 * x) * t40) * t6 +  &
-                                                         0.32D2 / 0.3D1 * self%P5 * ((0.3D1 / 0.16D2 - t14 / 0.2D1) * t1 + t48))    &
-                                                        * self%P2 * t83 + 0.8D1 * self%P1 * t17 * (t6 + 0.1D1) * (-0.1D1 / 0.4D1    &
-                                                        + t87 * t32 - 0.2D1 / 0.3D1 * t87 * t6 + 0.3D1 / 0.4D1 * t7) * (t6 - 0.1D1)
+        !ReconstructedFitParametrized1DThirdDerivative = (0.8D1 * t3 * t8 * t6 - 0.16D2 / 0.3D1 * (-0.9D1                            &
+        !                                                / 0.8D1 + 0.3D1 * t14) * t17 * t8 + 0.16D2 * t1 * (-0.5D1 / 0.6D1           &
+        !                                                * x * t1 + (t25 - 0.5D1 / 0.4D1 * x + 0.3D1 / 0.4D1 * self%P4) * self%P3)   &
+        !                                                * t32 - 0.32D2 / 0.3D1 * self%P5 * ((0.3D1 / 0.4D1 - 0.2D1 * t14) *         &
+        !                                                 t1 + t48) * t7 + 0.16D2 / 0.3D1 * (t3 - (0.3D1 * t25 - 0.15D2 / 0.4D1      &
+        !                                                * x + t55) * self%P3 * t1 + (x * t59 * t40 - (0.9D1 / 0.2D1 * x -           &
+        !                                                 0.3D1 / 0.2D1 * self%P4) * t23 * self%P3 - t55 + 0.3D1 * x) * t40) * t6 +  &
+        !                                                 0.32D2 / 0.3D1 * self%P5 * ((0.3D1 / 0.16D2 - t14 / 0.2D1) * t1 + t48))    &
+        !                                                * self%P2 * t83 + 0.8D1 * self%P1 * t17 * (t6 + 0.1D1) * (-0.1D1 / 0.4D1    &
+        !                                                + t87 * t32 - 0.2D1 / 0.3D1 * t87 * t6 + 0.3D1 / 0.4D1 * t7) * (t6 - 0.1D1)
+
+        !> MAPLE output
+        !> extra variables
+        real(dl) :: t1
+        real(dl) :: t2
+        real(dl) :: t3
+        real(dl) :: t4
+        real(dl) :: t6
+        real(dl) :: t9
+        real(dl) :: t10
+        real(dl) :: t13
+        real(dl) :: t15
+        real(dl) :: t16
+        real(dl) :: t17
+        real(dl) :: t21
+        real(dl) :: t22
+        real(dl) :: t27
+        real(dl) :: t30
+        real(dl) :: t31
+        real(dl) :: t33
+        real(dl) :: t34
+        real(dl) :: t38
+        real(dl) :: t39
+        real(dl) :: t40
+        real(dl) :: t41
+        real(dl) :: t44
+        real(dl) :: t47
+        real(dl) :: t49
+        real(dl) :: t50
+        real(dl) :: t52
+        real(dl) :: t56
+        real(dl) :: t58
+        real(dl) :: t59
+        real(dl) :: t61
+        real(dl) :: t65
+        real(dl) :: t73
+        real(dl) :: t74
+        real(dl) :: t75
+        real(dl) :: t81
+        real(dl) :: t84
+        real(dl) :: t87
+        real(dl) :: t102
+        real(dl) :: t104
+        real(dl) :: t114
+        real(dl) :: t121
+        real(dl) :: t122
+        real(dl) :: t130
+        real(dl) :: t142
+        real(dl) :: t145
+        real(dl) :: t147
+
+        !> defining the extra variables
+        t1 = self%P3 ** 2
+        t2 = self%P2 * t1
+        t3 = x - dble(self%P4)
+        t4 = t3 ** 2
+        t6 = exp(-self%P3 * t4)
+        t9 = tanh(self%P5 * t3)
+        t10 = t3 * t6 * t9
+        t13 = self%P2 * self%P3
+        t15 = t9 ** 2
+        t16 = 0.1D1 - t15
+        t17 = t6 * self%P5 * t16
+        t21 = self%P2 * t1 * self%P3
+        t22 = t4 * t3
+        t27 = t2 * t4
+        t30 = t13 * t3
+        t31 = self%P5 ** 2
+        t33 = t9 * t16
+        t34 = t6 * t31 * t33
+        t38 = self%P2 * t6 + self%P1
+        t39 = t31 * self%P5
+        t40 = t38 * t39
+        t41 = t16 ** 2
+        t44 = t15 * t16
+        t47 = -0.8D1 * t21 * t22 * t6 * t9 + 0.12D2 * t2 * t10 - 0.6D1 * t13 * t17 + 0.12D2 * t27 * t17 + 0.12D2 * t30 * t34 - 0.2D1 * t40 * t41 + 0.4D1 * t40 * t44
+        t49 = 1 - self%P4
+        t50 = t49 ** 2
+        t52 = exp(-self%P3 * dble(t50))
+        t56 = tanh(self%P5 * dble(t49))
+        t58 = t38 * t9 + self%omegaL - (self%P2 * t52 + self%P1) * t56
+        t59 = 0.1D1 / t58
+        t61 = t6 * t9
+        t65 = t4 * t6 * t9
+        t73 = -0.2D1 * t38 * t31 * t33 - 0.2D1 * t13 * t61 - 0.4D1 * t30 * t17 + 0.4D1 * t2 * t65
+        t74 = t58 ** 2
+        t75 = 0.1D1 / t74
+        t81 = t38 * self%P5 * t16 - 0.2D1 * t13 * t10
+        t84 = t81 ** 2
+        t87 = 0.1D1 / t74 / t58
+        t102 = t1 ** 2
+        t104 = t4 ** 2
+        t114 = t6 * t39
+        t121 = t31 ** 2
+        t122 = t38 * t121
+        t130 = 0.16D2 * self%P2 * t102 * t104 * t6 * t9 + 0.24D2 * t13 * t6 *t31 * t9 * t16 - 0.8D1 * t122 * t15 * t9 * t16 + 0.16D2 * t30 * t114 * t41 &
+                - 0.32D2 * t30 * t114 * t44 + 0.16D2 * t122 * t41 * t9 +0.48D2 * t2 * t3 * t17 - 0.32D2 * t21 * t22 * t17 + 0.12D2 * t2 *t61 - 0.48D2 * t21 * t65 - 0.48D2 * t27 * t34
+        t142 = t73 ** 2
+        t145 = t84 ** 2
+        t147 = t74 ** 2
+
+        ReconstructedFitParametrized1DThirdDerivative = -t47 * t59 + 0.3D1 * t73 * t75 * t81 - 0.2D1 * t84 * t81 * t87 - x * t130 * t59 / 0.3D1 + 0.4D1 / 0.3D1 &
+                                                        * x * t47* t75 * t81 - 0.4D1 * x * t73 * t87 * t84 + x * t142 * t75 + 0.2D1 * x * t145 / t147
 
 
     end function ReconstructedFitParametrized1DThirdDerivative
@@ -419,15 +668,15 @@ contains
         real(dl) :: t9
 
         !> defining the extra variables
-        t1 = -a + self%P4
+        t1 = -x + self%P4
         t2 = t1 ** 2
         t4 = exp(-self%P3 * t2)
         t6 = tanh(self%P5 * t1)
         t9 = -1.d0 + self%P4
         t10 = t9 ** 2
-        t12 = exp(-self%P3 * dble(t10))
+        t12 = exp(-self%P3 * t10)
         t14 = tanh(self%P5 * t9)
-        t20 = a ** 2
+        t20 = x ** 2
 
         !> Integral
         ReconstructedFitParametrized1DIntegral = (self%P2 * t12 * t14 - self%P2 * t4 * t6 + self%P1 * t14 - self%P1 *   &
