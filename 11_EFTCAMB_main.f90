@@ -36,9 +36,11 @@ module EFTCAMB_main
     use EFTCAMB_pure_EFT_std
     use EFTCAMB_Reparametrized_Horndeski
     use EFTCAMB_designer_fR
-    use EFTCAMB_designer_GBD
     use EFTCAMB_designer_mc_quintessence
     use EFTCAMB_LE_Horava
+    !> Add on:
+    use EFTCAMB_designer_GBD
+    use EFTCAMB_designer_GBD_2
 
     implicit none
 
@@ -299,12 +301,13 @@ contains
                     case(2)
                         allocate( EFTCAMB_des_mc_quint::self%model )
                         call self%model%init( 'Designer minimally coupled quintessence', 'Designer minimally coupled quintessence' )
-
                     !> GBD mod: adding the GBD designer case
                     case(3)
                         allocate( EFTCAMB_GBD_designer::self%model)
                         call self%model%init( 'Designer GBD', 'Designer GBD' )
-
+                    case(4)
+                        allocate( EFTCAMB_GBD_designer_2::self%model )
+                        call self%model%init( 'Designer GBD', 'Designer GBD' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and DesignerEFTmodel =', self%DesignerEFTmodel
@@ -312,6 +315,8 @@ contains
                         write(*,'(a)')    'DesignerEFTmodel=1  designer f(R)'
                         write(*,'(a)')    'DesignerEFTmodel=2  designer minimally coupled quintessence'
                         write(*,'(a)')    'DesignerEFTmodel=3  designer GBD'
+                        write(*,'(a)')    'DesignerEFTmodel=3  designer GBD 2 (using DE density instead of wDE)'
+                    !> GBD mod end.
                         call MpiStop('EFTCAMB error')
                 end select
 

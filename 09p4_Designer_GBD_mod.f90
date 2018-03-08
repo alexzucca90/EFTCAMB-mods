@@ -34,17 +34,20 @@ module EFTCAMB_designer_GBD_2
     use EFTCAMB_rootfind
     use EFTCAMB_cache
     use EFTCAMB_abstract_parametrizations_1D
-    use EFTCAMB_neutral_parametrization_1D
+    !use EFTCAMB_neutral_parametrization_1D
     use EFTCAMB_constant_parametrization_1D
-    use EFTCAMB_CPL_parametrizations_1D
-    use EFTCAMB_JBP_parametrizations_1D
-    use EFTCAMB_turning_point_parametrizations_1D
-    use EFTCAMB_taylor_parametrizations_1D
+    !use EFTCAMB_CPL_parametrizations_1D
+    !use EFTCAMB_JBP_parametrizations_1D
+    !use EFTCAMB_turning_point_parametrizations_1D
+    !use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
     !> adding the interpolated function and the reconstructed dark energy
     use EFTCAMB_interpolated_function_1D
     use EFTCAMB_reconstructed_fit_parametrizations_1D
+    use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
+    use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
+
 
     implicit none
 
@@ -113,7 +116,7 @@ module EFTCAMB_designer_GBD_2
         ! stability procedures:
         procedure :: additional_model_stability        => EFTCAMBDesignerGBD2AdditionalModelStability !< function that computes model specific stability requirements.
 
-    end type EFTCAMB_GBD_designer
+    end type EFTCAMB_GBD_designer_2
 
     ! ---------------------------------------------------------------------------------------------
 
@@ -129,7 +132,7 @@ contains
         type(TIniFile)                  :: Ini     !< Input ini file
 
         ! read model selection flags:
-        self%EFTwDE             = Ini_Read_Int_File( Ini, 'EFTxDE', 0 )
+        self%EFTxDE             = Ini_Read_Int_File( Ini, 'EFTxDE', 0 )
 
         !> read coupling type
         self%coupling_type      = Ini_Read_Int_File( Ini, 'GBD_coupling_type', 3)
@@ -150,26 +153,27 @@ contains
         character, allocatable, dimension(:)              :: param_names       !< an array of strings containing the names of the function parameters
         character, allocatable, dimension(:)              :: param_names_latex !< an array of strings containing the latex names of the function parameters
 
-        ! allocate wDE:
-        if ( allocated(self%DesGBDxDE) ) deallocate(self%DesGBDwDE)
+        ! allocate xDE:
+        if ( allocated(self%DesGBDxDE) ) deallocate(self%DesGBDxDE)
+        select case ( self%EFTxDE )
             case(0)
                 allocate( constant_parametrization_1D::self%DesGBDxDE )
             case(1)
-                allocate( reconstructed_DE_parametrization_1D::self%DesGBDxDE )
+                allocate( reconstructed_DE_fit_parametrization_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
-            case(1)
-                allocate( reconstructed_DE_parametrization_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+            case(2)
+                allocate( reconstructed_DE_fit_tracking_parametrization_1D::self%DesGBDxDE )
+                call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','O_L'])
             case(3)
                 allocate( interpolated_function_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['wDE_filename  '])
+                call self%DesGBDxDE%set_param_names(['xDE_filename  '])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTxDE =', self%EFTxDE
                 write(*,'(a)')    'Choose EFTxDE < 4.'
         end select
 
         ! initialize the names:
-        call self%DesGBDxDE%set_name( 'EFTw', 'w' )
+        call self%DesGBDxDE%set_name( 'EFTx', 'X' )
 
     end subroutine EFTCAMBDesignerGBD2AllocateModelSelection
 
@@ -356,7 +360,7 @@ contains
         if ( DebugEFTCAMB ) then
         !if ( .true. ) then
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
-            call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
+            call CreateTxtFile( './debug_designer_GBD_2_solution.dat', 33 )
             write(33,'(a)') "#  1:a       2:phi         3:dphi       4:ddphi        5:V       6:Omega       7:c       8:Lambda      9:X     10:Xp"
             call self%solve_designer_equations( params_cache, success=success )
             close(33)
@@ -756,7 +760,7 @@ contains
         class(EFTCAMB_GBD_designer_2)  :: self   !< the base class
 
         self%parameter_number = 1
-        self%parameter_number = self%parameter_number +self%DesGBDwDE%parameter_number
+        self%parameter_number = self%parameter_number +self%DesGBDxDE%parameter_number
 
     end subroutine EFTCAMBDesignerGBD2ComputeParametersNumber
 
@@ -969,7 +973,7 @@ contains
         !temp = eft_cache%grhoa2 +eft_par_cache%grhov*a*a*self%DesGBDwDE%integral(a)
         !> adapting temp
         temp = eft_cache%grhoa2 + 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**2
-        EFTCAMBDesignerGBDComputeDtauda = sqrt(3/temp)
+        EFTCAMBDesignerGBD2ComputeDtauda = sqrt(3/temp)
 
     end function EFTCAMBDesignerGBD2ComputeDtauda
 
@@ -979,23 +983,23 @@ contains
 
         implicit none
 
-        class(EFTCAMB_GBD_designer_2)                   :: self          !< the base class
+        class(EFTCAMB_GBD_designer_2)                :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         !eft_cache%grhov_t = eft_par_cache%grhov*self%DesGBDwDE%integral(a)
         !> Adapting the Friedmann equation
-        eft_cache%grhov_t = 3._dl eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**2
+        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**2
 
         !> for some reason the Friedmann equation is missing the radiation contribution
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
 
-    end subroutine EFTCAMBDesignerGBDComputeAdotoa
+    end subroutine EFTCAMBDesignerGBD2ComputeAdotoa
 
     ! ---------------------------------------------------------------------------------------------
     !> Subroutine that computes the two derivatives wrt conformal time of H.
-    subroutine EFTCAMBDesignerGBDComputeHubbleDer( self, a, eft_par_cache, eft_cache )
+    subroutine EFTCAMBDesignerGBD2ComputeHubbleDer( self, a, eft_par_cache, eft_cache )
 
         implicit none
 
@@ -1005,7 +1009,7 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         !> Dark energy pressure from the reconstructed dark energy density
-        eft_cache%gpiv_t = -a**3 * self%DesGBDxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 *
+        eft_cache%gpiv_t = -a**3 * self%DesGBDxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%DesGBDxDE%value(a)
         eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
 
         !> replacing the following
@@ -1017,7 +1021,7 @@ contains
             & +3._dl*eft_par_cache%h0_Mpc**2 * a**2* eft_cache%adotoa * (-7._dl/6._dl*self%DesGBDxDE%first_derivative(a)*a + a**2 * self%DesGBDxDE%second_derivative(a)/6._dl +2._dl*self%DesGBDxDE%value(a)/3._dl) &
             & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
-    end subroutine EFTCAMBDesignerGBDComputeHubbleDer
+    end subroutine EFTCAMBDesignerGBD2ComputeHubbleDer
 
     ! ---------------------------------------------------------------------------------------------
     !> Function that computes model specific stability requirements.
@@ -1025,7 +1029,7 @@ contains
 
         implicit none
 
-        class(EFTCAMB_GBD_designer)                  :: self          !< the base class
+        class(EFTCAMB_GBD_designer_2)                :: self          !< the base class
         real(dl), intent(in)                         :: a             !< the input scale factor.
         type(EFTCAMB_parameter_cache), intent(inout) :: eft_par_cache !< the EFTCAMB parameter cache that contains all the physical parameters.
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
@@ -1040,6 +1044,6 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
 
-end module EFTCAMB_designer_GBD
+end module EFTCAMB_designer_GBD_2
 
 !----------------------------------------------------------------------------------------

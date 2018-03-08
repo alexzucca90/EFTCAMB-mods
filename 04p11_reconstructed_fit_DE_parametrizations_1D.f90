@@ -57,7 +57,7 @@ module EFTCAMB_reconstructed_DE_fit_parametrizations_1D
         ! utility functions:
         procedure :: set_param_number      => ReconstructedDEFitParametrized1DSetParamNumber      !< subroutine that sets the number of parameters of the Taylor expansion parametrized function.
         procedure :: init_parameters       => ReconstructedDEFitParametrized1DInitParams          !< subroutine that initializes the function parameters based on the values found in an input array.
-        procedure :: parameter_value       => ReconstructedDEFitDEParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
+        procedure :: parameter_value       => ReconstructedDEFitParametrized1DParameterValues     !< subroutine that returns the value of the function i-th parameter.
         procedure :: feedback              => ReconstructedDEFitParametrized1DFeedback            !< subroutine that prints to screen the informations about the function.
 
         ! evaluation procedures:
@@ -184,7 +184,7 @@ contains
         !> extra parameters
         real(dl) :: t1
         real(dl) :: t2
-        real(dl) :: t3
+        real(dl) :: t4
         real(dl) :: t8
         real(dl) :: t10
         real(dl) :: t11
@@ -255,7 +255,7 @@ contains
         real(dl) :: t1
         real(dl) :: t2
         real(dl) :: t3
-        real(dl) :: t6
+        real(dl) :: t5
         real(dl) :: t7
         real(dl) :: t11
         real(dl) :: t19
