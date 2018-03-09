@@ -154,7 +154,7 @@ contains
             print_params_temp = .True.
         end if
 
-        write(*,*)     'Reconstruction DE Fit parametrization: ', self%name
+        write(*,*)     'Reconstruction DE Fit + Tracking parametrization: ', self%name
         if ( print_params_temp ) then
             do i=1, self%parameter_number
                 call self%parameter_names( i, param_name  )

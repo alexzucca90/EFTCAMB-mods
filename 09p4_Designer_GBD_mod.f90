@@ -47,6 +47,7 @@ module EFTCAMB_designer_GBD_2
     use EFTCAMB_reconstructed_fit_parametrizations_1D
     use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
     use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
+    use EFTCAMB_power_law_DE_parametrizations_1D
 
 
     implicit none
@@ -159,12 +160,15 @@ contains
             case(0)
                 allocate( constant_parametrization_1D::self%DesGBDxDE )
             case(1)
+                allocate( power_law_DE_parametrization_1D::self%DesGBDxDE )
+                call self%DesGBDxDE%set_param_names(['GBDwDE','GBDomL'], ['w_{\rm DE}','\Omega_{L}'])
+            case(2)
                 allocate( reconstructed_DE_fit_parametrization_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
-            case(2)
+            case(3)
                 allocate( reconstructed_DE_fit_tracking_parametrization_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','O_L'])
-            case(3)
+            case(4)
                 allocate( interpolated_function_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['xDE_filename  '])
             case default
