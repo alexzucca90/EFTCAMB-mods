@@ -167,6 +167,10 @@ contains
         !> value of the function
         PowerLawDEParametrized1DValue = self%omegaL * x**(-3._dl * (1._dl + self%wDE))
 
+        if (x == 0.d0) then
+            PowerLawDEParametrized1DValue = 1.d0
+        end if
+
     end function PowerLawDEParametrized1DValue
 
     ! ---------------------------------------------------------------------------------------------

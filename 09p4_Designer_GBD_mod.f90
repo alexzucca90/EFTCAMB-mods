@@ -362,7 +362,6 @@ contains
         !> Re-introducing this at some point
         !> debug code:
         if ( DebugEFTCAMB ) then
-        !if ( .true. ) then
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
             call CreateTxtFile( './debug_designer_GBD_2_solution.dat', 33 )
             write(33,'(a)') "#  1:a       2:phi         3:dphi       4:ddphi        5:V       6:Omega       7:c       8:Lambda      9:X     10:Xp"
@@ -371,14 +370,13 @@ contains
             print*, 'EFTCAMB DEBUG ( GBD designer ): GBD results printed'
         end if
 
-
-
-
         !> solve the background equations and store the solution:
         call self%solve_designer_equations( params_cache, success=success )
 
-        write(*,'(a)') "EFTCAMB designer GBD background solver. Equation solved."
-        write(*,"(L1)") success
+        if ( DebugEFTCAMB ) then
+            write(*,'(a)') "EFTCAMB designer GBD background solver. Equation solved."
+            write(*,"(L1)") "success:",success
+        end if
 
     end subroutine EFTCAMBDesignerGBD2InitBackground
 
@@ -397,10 +395,6 @@ contains
         real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
         real(dl) :: Omegarad_EFT
 
-        !> this will be removed soon.
-        !real(dl) :: EquivalenceScale_GBD, Ratio_GBD, Initial_B_fR, Initial_C_fR
-        !real(dl) :: PPlus, yPlus, CoeffA_Part, yStar
-
         real(dl) :: y(num_eq+1), ydot(num_eq+1)
         real(dl) :: dN
 
@@ -417,10 +411,6 @@ contains
 
         Omegarad_EFT       = OmegaGamma_EFT + OmegaNu_EFT
 
-        !> this will be removed soon.
-        !EquivalenceScale_GBD = (Omegarad_EFT+ OmegaMassiveNu_EFT)/Omegam_EFT
-        !Ratio_GBD = EquivalenceScale_GBD/Exp( self%x_initial )
-
         ! 2) Set initial conditions:
         !> need to modify this
         y(1) = self%x_initial
@@ -433,15 +423,21 @@ contains
         dN = (self%x_final - self%x_initial)/self%designer_num_points
 
         if( DebugEFTCAMB ) then
+            !> test
+            write(*,*) "Solving the equation of motion for phi"
             write(*,*) "dN:",dN
         end if
+
+
 
         !> Loop to fill the interpolation arrays
         do  i = 1, self%EFTOmega%num_points
 
             !> tests (to be removed in the final version).
-            !write(*,*) "y:",y
+!write(*,*) "y:",y
             !pause
+
+!write(*,*) "calling gl10"
 
             !> calling the solver, in this case gl10
             call gl10(num_eq+1,derivs, y, dN)
@@ -455,6 +451,7 @@ contains
                 end if
             end do
 
+!write(*,*) "calling output"
             !> filling the interpolation arrays
             call output(num_eq+1,y,i)
 
@@ -974,10 +971,18 @@ contains
 
         real(dl) :: temp
 
-        !temp = eft_cache%grhoa2 +eft_par_cache%grhov*a*a*self%DesGBDwDE%integral(a)
-        !> adapting temp
-        temp = eft_cache%grhoa2 + 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**2
-        EFTCAMBDesignerGBD2ComputeDtauda = sqrt(3/temp)
+
+
+        !> this is just a trick
+        if (a .le. 1.d-10) then
+            !a = 1.d-10
+            temp = eft_cache%grhoa2 !+ 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(1.d-10) * a**4
+        else
+            temp = eft_cache%grhoa2 + 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**4
+        end if
+        EFTCAMBDesignerGBD2ComputeDtauda = sqrt(3._dl/temp)
+
+!write(*,*) "dtauda: temp=",temp
 
     end function EFTCAMBDesignerGBD2ComputeDtauda
 
