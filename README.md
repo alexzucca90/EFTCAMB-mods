@@ -1,5 +1,5 @@
 # EFTCAMB-mods
-A few mods for EFTCAMB (https://github.com/EFTCAMB) that I need for my projects.
+A few mods for [EFTCAMB](https://github.com/EFTCAMB) that I need for my projects.
 
 ## Generalized-Brans-Dicke project
 This mod allows to implement in the Pure_EFT case $\Omega(a)$ and $w_{\rm DE}(a)$ from a table of the form
