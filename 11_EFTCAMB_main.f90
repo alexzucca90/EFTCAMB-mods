@@ -42,6 +42,7 @@ module EFTCAMB_main
     use EFTCAMB_designer_GBD
     use EFTCAMB_designer_GBD_2
     use EFTCAMB_pure_EFT_mod
+    use EFTCAMB_designer_fR_mod
 
     implicit none
 
@@ -312,6 +313,9 @@ contains
                     case(4)
                         allocate( EFTCAMB_GBD_designer_2::self%model )
                         call self%model%init( 'Designer GBD', 'Designer GBD' )
+                    case(5)
+                        allocate( EFTCAMB_fR_designer_mod::self%model )
+                        call self%model%init( 'Designer f(R)', 'Designer f(R)' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and DesignerEFTmodel =', self%DesignerEFTmodel

@@ -42,12 +42,12 @@ module EFTCAMB_designer_fR_mod
     use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
 
-!> adding the interpolated function and the reconstructed dark energy
-use EFTCAMB_interpolated_function_1D
-use EFTCAMB_reconstructed_fit_parametrizations_1D
-use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
-use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
-use EFTCAMB_power_law_DE_parametrizations_1D
+    !> adding the interpolated function and the reconstructed dark energy
+    use EFTCAMB_interpolated_function_1D
+    use EFTCAMB_reconstructed_fit_parametrizations_1D
+    use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
+    use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
+    use EFTCAMB_power_law_DE_parametrizations_1D
 
     implicit none
 
@@ -1156,6 +1156,6 @@ contains
 
     ! ---------------------------------------------------------------------------------------------
 
-end module EFTCAMB_designer_fR
+end module EFTCAMB_designer_fR_mod
 
 !----------------------------------------------------------------------------------------
