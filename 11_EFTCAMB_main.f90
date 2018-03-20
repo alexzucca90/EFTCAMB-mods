@@ -41,6 +41,7 @@ module EFTCAMB_main
     !> Add on:
     use EFTCAMB_designer_GBD
     use EFTCAMB_designer_GBD_2
+    use EFTCAMB_pure_EFT_mod
 
     implicit none
 
@@ -270,6 +271,9 @@ contains
                     case(1)
                         allocate( EFTCAMB_std_pure_EFT::self%model )
                         call self%model%init( 'Standard Pure EFT', 'Standard Pure EFT' )
+                    case(2)
+                        allocate( EFTCAMB_std_pure_EFT::self%model)
+                        call self%model%init( 'Modified Pure EFT', 'Modified Pure EFT' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag
                         write(*,'(a,I3)') 'and PureEFTmodel =', self%PureEFTmodel
