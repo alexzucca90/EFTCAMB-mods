@@ -58,7 +58,7 @@ module EFTCAMB_designer_fR_mod
     !----------------------------------------------------------------------------------------
     !> This is the designer f(R) model. Inherits from the abstract designer model and has the
     !! freedom of defining the expansion history.
-    type, extends ( EFTCAMB_designer_model_mod ) :: EFTCAMB_fR_designer_mod
+    type, extends ( EFTCAMB_designer_model ) :: EFTCAMB_fR_designer_mod
 
         ! theory parameters:
         real(dl) :: B0                                                    !< The present day value of B0.
@@ -275,6 +275,10 @@ contains
 
         integer, parameter :: num_eq = 2   !<  Number of equations
 
+        !> AZ MOD START: introducing new parameters for X_de
+        real(dl) :: EFT_X, EFT_Xp, EFT_Xpp, wDE, wDEp
+        !> AZ MOD END
+
         real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
         real(dl) :: Omegarad_EFT, EquivalenceScale_fR, Ratio_fR, Initial_B_fR, Initial_C_fR
         real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x
@@ -306,17 +310,34 @@ contains
         Initial_C_fR = -3._dl/(2._dl*(1._dl + Ratio_fR))
         PPlus = 0.5_dl*(-Initial_B_fR + Sqrt(Initial_B_fR**2 - 4._dl*Initial_C_fR))
         yPlus = exp(PPlus*self%x_initial)
+
         !    Construction of the particolar solution:
-        CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*self%DesfRwDE%first_derivative( Exp(self%x_initial) )&
-            & +9._dl*self%DesfRwDE%value( Exp(self%x_initial) )**2&
-            & +(18._dl-3._dl*Initial_B_fR)*self%DesfRwDE%value( Exp(self%x_initial) )&
-            & +9._dl -3._dl*Initial_B_fR +Initial_C_fR)
-        yStar = CoeffA_Part*Omegavac_EFT*Exp(-2._dl*self%x_initial)*self%DesfRwDE%integral( Exp(self%x_initial) )
+        !> AZ MOD START: introducing xDE
+        !> constructing wDE and its derivative w.r.t
+        wDE     = -Exp(self%x_initial)* self%DesfRxDE%first_derivative( Exp(self%x_initial) )/self%DesfRxDE%value( Exp(self%x_initial) )/3._dl - 1._dl
+        wDEp    = - Exp(self%x_initial) * self%DesfRxDE%second_derivative( Exp(self%x_initial) ) / 3._dl / self%DesfRxDE%value( Exp(self%x_initial) )  &
+            & - self%DesfRxDE%first_derivative( Exp(self%x_initial) )/self%DesfRxDE%value( Exp(self%x_initial) )/3._dl &
+            & +Exp(self%x_initial)* ( self%DesfRxDE%first_derivative( Exp(self%x_initial) )/self%DesfRxDE%value( Exp(self%x_initial) ) )**2 /3._dl
+        EFT_X = self%DesfRxDE%value( Exp(self%x_initial) )
+
+        !CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*self%DesfRwDE%first_derivative( Exp(self%x_initial) )&
+        !    & +9._dl*self%DesfRwDE%value( Exp(self%x_initial) )**2&
+        !    & +(18._dl-3._dl*Initial_B_fR)*self%DesfRwDE%value( Exp(self%x_initial) )&
+        !    & +9._dl -3._dl*Initial_B_fR +Initial_C_fR)
+        CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*wDEp + 9._dl*wDE**2&
+            & +(18._dl-3._dl*Initial_B_fR)*wDE +9._dl -3._dl*Initial_B_fR +Initial_C_fR)
+
+        !yStar = CoeffA_Part*Omegavac_EFT*Exp(-2._dl*self%x_initial)*self%DesfRwDE%integral( Exp(self%x_initial) )
+        yStar = CoeffA_Part*EFT_X
+        !> AZ MOD END
 
         ! 3) Set initial conditions:
         x    = self%x_initial
         y(1) = A*yPlus + yStar
-        y(2) = PPlus*A*yPlus - 3._dl*( 1._dl+ self%DesfRwDE%value(Exp(self%x_initial)) )*yStar
+        !> AZ MOD START: replacing wDE with xDE
+        !y(2) = PPlus*A*yPlus - 3._dl*( 1._dl+ self%DesfRwDE%value(Exp(self%x_initial)) )*yStar
+        y(2) = PPlus*A*yPlus - 3._dl*( 1._dl+ wDE )*yStar
+        !> AZ MOD END
         ydot = 0._dl
 
         ! 4) Initialize DLSODA:
@@ -976,9 +997,11 @@ contains
         else if ( i==1 ) then
             latexname = TRIM('B_0')
             return
-        ! the other parameters are the w_DE parameters:
+        ! the other parameters are the x_DE parameters:
         else
-            call self%DesfRwDE%parameter_names_latex( i-1, latexname )
+            !> AZ MOD START: replacing wDE with xDE
+            call self%DesfRxDE%parameter_names_latex( i-1, latexname )
+            !> AZ MOD END
             return
         end if
 
