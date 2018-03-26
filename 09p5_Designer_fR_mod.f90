@@ -233,7 +233,7 @@ contains
         ! debug code:
         if ( DebugEFTCAMB ) then
             ! print the function B0(A). This is used to debug the initial conditions part.
-            call CreateTxtFile( './debug_designer_fR_B.dat', 34 )
+            call CreateTxtFile( './debug_designer_fR_mod_B.dat', 34 )
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing B(A) results'
             TempMin      = -100._dl
             TempMax      = +100._dl
@@ -246,7 +246,7 @@ contains
             close(34)
             ! prints f(R) quantities.
             print*, 'EFTCAMB DEBUG ( f(R) designer ): Printing F(R) results'
-            call CreateTxtFile( './debug_designer_fR_solution.dat', 33 )
+            call CreateTxtFile( './debug_designer_fR_mod_solution.dat', 33 )
             debug_A = 1.0_dl
             call self%solve_designer_equations( params_cache, debug_A, B0, only_B0=.False., success=success )
             close(33)
@@ -254,6 +254,8 @@ contains
 
         ! call boundary conditions lookup:
         call self%find_initial_conditions( params_cache, feedback_level, A_ini, success )
+
+        write(*,*) "A_ini:",A_ini
 
         ! solve the background equations and store the solution:
         call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success )
@@ -318,7 +320,8 @@ contains
         wDEp    = - Exp(self%x_initial) * self%DesfRxDE%second_derivative( Exp(self%x_initial) ) / 3._dl / self%DesfRxDE%value( Exp(self%x_initial) )  &
             & - self%DesfRxDE%first_derivative( Exp(self%x_initial) )/self%DesfRxDE%value( Exp(self%x_initial) )/3._dl &
             & +Exp(self%x_initial)* ( self%DesfRxDE%first_derivative( Exp(self%x_initial) )/self%DesfRxDE%value( Exp(self%x_initial) ) )**2 /3._dl
-        EFT_X = self%DesfRxDE%value( Exp(self%x_initial) )
+        EFT_X   = self%DesfRxDE%value( Exp(self%x_initial) )
+
 
         !CoeffA_Part = (-6._dl*Initial_C_fR)/(-3._dl*Exp(self%x_initial)*self%DesfRwDE%first_derivative( Exp(self%x_initial) )&
         !    & +9._dl*self%DesfRwDE%value( Exp(self%x_initial) )**2&
@@ -1108,8 +1111,11 @@ contains
         real(dl) :: temp
 
         !> AZ MOD START: replacing wDE with xDE
-        !temp = eft_cache%grhoa2 +eft_par_cache%grhov*a*a*self%DesfRwDE%integral(a)
-        temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%DesfRxDE%value(a) * a**4
+        if ( a .le. 1.d-10 ) then
+            temp = eft_cache%grhoa2
+        else
+            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%DesfRxDE%value(a) * a**4
+        end if
         !> AZ MOD END
         EFTCAMBDesignerFRComputeDtauda = sqrt(3/temp)
 

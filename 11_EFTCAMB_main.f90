@@ -273,7 +273,7 @@ contains
                         allocate( EFTCAMB_std_pure_EFT::self%model )
                         call self%model%init( 'Standard Pure EFT', 'Standard Pure EFT' )
                     case(2)
-                        allocate( EFTCAMB_std_pure_EFT::self%model)
+                        allocate( EFTCAMB_mod_pure_EFT::self%model)
                         call self%model%init( 'Modified Pure EFT', 'Modified Pure EFT' )
                     case default
                         write(*,'(a,I3)') 'No model corresponding to EFTFlag =', self%EFTflag

@@ -927,10 +927,17 @@ contains
 
         real(dl) :: temp
 
+
         ! AZ MOD START: using X_DE
-        temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**4
-        ! AZ MOD END
-        EFTCAMBPureEFTstdComputeDtauda = sqrt(3/temp)
+        if ( a .le. 1.d-10 ) then
+            !> just a numerical trick
+            temp = eft_cache%grhoa2
+        else
+            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**4
+        end if
+         ! AZ MOD END
+
+        EFTCAMBPureEFTstdComputeDtauda = sqrt(3._dl/temp)
 
     end function EFTCAMBPureEFTstdComputeDtauda
 
@@ -975,6 +982,7 @@ contains
             & + eft_cache%adotoa * a**2 * eft_par_cache%h0_Mpc**2 * (2._dl * self%PureEFTxDE%value(a) &
             & + 2.5_dl * a * self%PureEFTxDE%first_derivative(a) + 0.5_dl * a**2 * self%PureEFTxDE%second_derivative(a) )&
             & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
+        ! AZ MOD END
 
     end subroutine EFTCAMBPureEFTstdComputeHubbleDer
 

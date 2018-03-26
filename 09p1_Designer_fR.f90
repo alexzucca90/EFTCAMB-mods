@@ -255,6 +255,8 @@ contains
         ! call boundary conditions lookup:
         call self%find_initial_conditions( params_cache, feedback_level, A_ini, success )
 
+        write(*,*) "A_ini:",A_ini
+
         ! solve the background equations and store the solution:
         call self%solve_designer_equations( params_cache, A_ini, B0, only_B0=.False., success=success )
 
