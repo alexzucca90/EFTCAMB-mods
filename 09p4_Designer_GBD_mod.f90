@@ -44,10 +44,10 @@ module EFTCAMB_designer_GBD_2
 
     !> adding the interpolated function and the reconstructed dark energy
     use EFTCAMB_interpolated_function_1D
-    use EFTCAMB_reconstructed_fit_parametrizations_1D
-    use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
-    use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
     use EFTCAMB_power_law_DE_parametrizations_1D
+    use EFTCAMB_hyperbolic_tangent_parametrizations_1D
+    use EFTCAMB_gaussian_hyperbolic_tangent_parametrizations_1D
+    use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
 
 
     implicit none
@@ -161,14 +161,17 @@ contains
                 allocate( constant_parametrization_1D::self%DesGBDxDE )
             case(1)
                 allocate( power_law_DE_parametrization_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['GBDwDE','GBDomL'], ['w_{\rm DE}','\Omega_{L}'])
+                call self%DesGBDxDE%set_param_names(['EFTxDE_wDE'], ['w_{\rm DE}'])
             case(2)
-                allocate( reconstructed_DE_fit_parametrization_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+                allocate( hyperbolic_tangent_parametrization_1D::self%DesGBDxDE )
+                call self%DesGBDxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C'], ['A','B','C'])
             case(3)
-                allocate( reconstructed_DE_fit_tracking_parametrization_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','O_L'])
+                allocate( gaussian_hyperbolic_tangent_parametrization_1D::self%DesGBDxDE )
+                call self%DesGBDxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D', 'EFTxDE_E'], ['A','B','C','D','E'])
             case(4)
+                allocate( hyperbolic_tangent_tracking_parametrization_1D::self%DesGBDxDE )
+                call self%DesGBDxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D'], ['A','B','C','D'])
+            case(5)
                 allocate( interpolated_function_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['xDE_filename  '])
             case default
@@ -534,8 +537,8 @@ contains
                 dphi = pi
 
                 !> phi prime prime
-                ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om*X_p)/omp/(Em+Er+Enu+X) &
-                        - (1._dl + ompp)*dphi**2/omp + (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X))*dphi
+                ddphi = ((om - 1._dl)*(3._dl * Em + 4._dl * Er - Enu_p) - om * Omegavac_EFT * X_p)/omp/(Em+Er+Enu+Omegavac_EFT*X) &
+                        - (1._dl + ompp)*dphi**2/omp + (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-Omegavac_EFT*X_p)/(Em+Er+Enu+Omegavac_EFT*X))*dphi
 
             end associate
 
@@ -622,10 +625,10 @@ contains
             end if
 
             !> calculate H, Hdot and adotdotoa
-            Etot        = Em+Er+Enu+X
+            Etot        = Em+Er+Enu+Omegavac_EFT*X
             adotoa      = a * params_cache%h0_Mpc* sqrt(Etot)
-            Hdot        = a**2 * params_cache%h0_Mpc**2 * ( (Em+Er+Enu+X) + &
-                          0.5_dl * (-3._dl * Em - 4._dl*Er + Enu_p + X_p) )
+            Hdot        = a**2 * params_cache%h0_Mpc**2 * ( (Em+Er+Enu+Omegavac_EFT*X) + &
+                          0.5_dl * (-3._dl * Em - 4._dl*Er + Enu_p + Omegavac_EFT*X_p) )
             adotdotoa   = Hdot + adotoa**2
 
             !> start filling the EFT interpolated functions
@@ -639,7 +642,7 @@ contains
             calF = om - dphi**2 / 6._dl + omp * dphi
 
             !> inverted Friedmann equation
-            V = 3._dl*(Em+Er+Enu+X)*calF - 3.d0*(Em+Er+Enu)
+            V = 3._dl*(Em+Er+Enu+Omegavac_EFT*X)*calF - 3.d0*(Em+Er+Enu)
             V = V * params_cache%h0_Mpc**2 ! this is in Mpc-2
 
             !> get Vprime from the equation of motion for the scalar field
@@ -693,24 +696,24 @@ contains
             end if
 
             !> E tot
-            Etot = Em + Er + Enu + X
+            Etot = Em + Er + Enu + Omegavac_EFT*X
 
             !> check dddphi with the MAPLE output
 
             !> now compute dddphi
-            dddphi = (3._dl*Em + 4._dl * Er - Enu_p)/Etot*dphi                                              &
-                    -(om - 1._dl)*(3._dl*Em + 4._dl*Er - Enu_p)/Etot*ompp/omp**2 *dphi                      &
-                    +(om-1._dl)/Etot/omp * (- 9._dl*Em -16._dl*Er - Enu_pp)                                 &
-                    -(om-1._dl)/omp/Etot**2*(3._dl*Em+4._dl*Er - Enu_p)*(-3._dl*Em-4._dl*Er+Enu_p + X_p)    &
-                    + X_p * ompp * dphi / omp**2 / Etot                                                     &
-                    - X_pp / omp / Etot                                                                     &
-                    + X_p * (-3._dl*Em-4._dl*Er + Enu_p + X_p)/omp/Etot**2                                  &
-                    +(1._dl+ompp)/omp**2 * dphi**3 * ompp                                                   &
-                    - omppp*dphi**3/omp                                                                     &
-                    -2._dl * (1._dl+ompp)*dphi*ddphi/omp                                                    &
-                    +(0.5_dl * (-9._dl*Em - 16._dl*Er - Enu_pp - X_pp)/Etot                                 &
-                    -0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)*(-3._dl*Em-4._dl*Er+Enu_p+X_p)/Etot**2)*dphi      &
-                    +0.5_dl* (5._dl*Em+6._dl*Er +2._dl*Enu+2._dl*X - Enu_p-X_p)/Etot*ddphi
+            dddphi = (3._dl*Em + 4._dl * Er - Enu_p)/Etot*dphi                                                                      &
+                    -(om - 1._dl)*(3._dl*Em + 4._dl*Er - Enu_p)/Etot*ompp/omp**2 *dphi                                              &
+                    +(om-1._dl)/Etot/omp * (- 9._dl*Em -16._dl*Er - Enu_pp)                                                         &
+                    -(om-1._dl)/omp/Etot**2*(3._dl*Em+4._dl*Er - Enu_p)*(-3._dl*Em-4._dl*Er+Enu_p + Omegavac_EFT*X_p)               &
+                    + Omegavac_EFT*X_p * ompp * dphi / omp**2 / Etot                                                                &
+                    - Omegavac_EFT*X_pp / omp / Etot                                                                                &
+                    + Omegavac_EFT*X_p * (-3._dl*Em-4._dl*Er + Enu_p + Omegavac_EFT*X_p)/omp/Etot**2                                &
+                    +(1._dl+ompp)/omp**2 * dphi**3 * ompp                                                                           &
+                    - omppp*dphi**3/omp                                                                                             &
+                    -2._dl * (1._dl+ompp)*dphi*ddphi/omp                                                                            &
+                    +(0.5_dl * (-9._dl*Em - 16._dl*Er - Enu_pp - Omegavac_EFT*X_pp)/Etot                                            &
+                    -0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-Omegavac_EFT*X_p)*(-3._dl*Em-4._dl*Er+Enu_p+Omegavac_EFT*X_p)/Etot**2)*dphi    &
+                    +0.5_dl* (5._dl*Em+6._dl*Er +2._dl*Enu+2._dl*Omegavac_EFT*X - Enu_p-Omegavac_EFT*X_p)/Etot*ddphi
 
 
             !> Filling the EFT functions:
@@ -978,7 +981,7 @@ contains
             !a = 1.d-10
             temp = eft_cache%grhoa2 !+ 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(1.d-10) * a**4
         else
-            temp = eft_cache%grhoa2 + 3._dl*eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**4
+            temp = eft_cache%grhoa2 + 3._dl*eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav * self%DesGBDxDE%value(a) * a**4
         end if
         EFTCAMBDesignerGBD2ComputeDtauda = sqrt(3._dl/temp)
 
@@ -999,7 +1002,7 @@ contains
 
         !eft_cache%grhov_t = eft_par_cache%grhov*self%DesGBDwDE%integral(a)
         !> Adapting the Friedmann equation
-        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * self%DesGBDxDE%value(a) * a**2
+        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav *self%DesGBDxDE%value(a) * a**2
 
         !> for some reason the Friedmann equation is missing the radiation contribution
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
@@ -1018,7 +1021,8 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         !> Dark energy pressure from the reconstructed dark energy density
-        eft_cache%gpiv_t = -a**3 * self%DesGBDxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%DesGBDxDE%value(a)
+        eft_cache%gpiv_t    = eft_par_cache%omegav*(-a**3 * self%DesGBDxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 &
+                            & - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%DesGBDxDE%value(a))
         eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
 
         !> replacing the following
@@ -1027,7 +1031,7 @@ contains
         !    & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
         eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
-            & +3._dl*eft_par_cache%h0_Mpc**2 * a**2* eft_cache%adotoa * (-7._dl/6._dl*self%DesGBDxDE%first_derivative(a)*a + a**2 * self%DesGBDxDE%second_derivative(a)/6._dl +2._dl*self%DesGBDxDE%value(a)/3._dl) &
+            & +3._dl*eft_par_cache%h0_Mpc**2 * a**2* eft_cache%adotoa * (-7._dl/6._dl*self%DesGBDxDE%first_derivative(a)*a + a**2 * self%DesGBDxDE%second_derivative(a)/6._dl +2._dl*self%DesGBDxDE%value(a)/3._dl) * eft_par_cache%omegav &
             & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
     end subroutine EFTCAMBDesignerGBD2ComputeHubbleDer

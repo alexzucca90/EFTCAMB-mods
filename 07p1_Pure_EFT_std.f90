@@ -46,6 +46,8 @@ module EFTCAMB_pure_EFT_std
     use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
     use EFTCAMB_interpolated_function_1D
+    use EFTCAMB_hyperbolic_tangent_wDE_parametrizations_1D
+
 
     implicit none
 
@@ -192,6 +194,9 @@ contains
                 allocate( interpolated_function_1D::self%PureEFTwDE )
                 call self%PureEFTwDE%set_param_names(['wDE_filename  '])
                 ! Nothing else to add
+            case(7)
+                allocate( hyperbolic_tangent_wDE_parametrization_1D::self%PureEFTwDE)
+                call self%PureEFTwDE%set_param_names(['EFTwDE_A','EFTwDE_B', 'EFTwDE_C'], ['w_A','w_B','w_C'])
 ! GBD MOD: end
 !------
             case default

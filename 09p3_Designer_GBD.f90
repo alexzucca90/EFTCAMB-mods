@@ -44,7 +44,7 @@ module EFTCAMB_designer_GBD
 
     !> adding the interpolated function and the reconstructed dark energy
     use EFTCAMB_interpolated_function_1D
-    use EFTCAMB_reconstructed_fit_parametrizations_1D
+    use EFTCAMB_hyperbolic_tangent_wDE_parametrizations_1D
 
     implicit none
 
@@ -173,8 +173,8 @@ contains
                 allocate( interpolated_function_1D::self%DesGBDwDE )
                 call self%DesGBDwDE%set_param_names(['wDE_filename  '])
             case(7)
-                allocate( reconstructed_fit_parametrization_1D::self%DesGBDwDE)
-                call self%DesGBDwDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+                allocate( hyperbolic_tangent_wDE_parametrization_1D::self%DesGBDwDE)
+                call self%DesGBDwDE%set_param_names(['EFTwDE_A','EFTwDE_B', 'EFTwDE_C'], ['w_A','w_B','w_C'])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -369,7 +369,7 @@ contains
         !if ( .true. ) then
             print*, 'EFTCAMB DEBUG ( GBD designer ): Printing GBD results'
             call CreateTxtFile( './debug_designer_GBD_solution.dat', 33 )
-            write(33,*) "#  a,  phi,    dphi,   ddphi,  V,  Omega,  c,  Lambda"
+            write(33,'(a)') "#  1:a       2:phi         3:dphi       4:ddphi        5:V       6:Omega       7:c       8:Lambda      9:X       10:wDE    11:Xp"
             call self%solve_designer_equations( params_cache, success=success )
             close(33)
             print*, 'EFTCAMB DEBUG ( GBD designer ): GBD results printed'
@@ -399,8 +399,11 @@ contains
         integer, parameter :: num_eq = 2   !<  Number of equations
 
         real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
-        real(dl) :: Omegarad_EFT, EquivalenceScale_GBD, Ratio_GBD, Initial_B_fR, Initial_C_fR
-        real(dl) :: PPlus, yPlus, CoeffA_Part, yStar, x
+        real(dl) :: Omegarad_EFT
+
+        !> this will be removed soon.
+        !real(dl) :: EquivalenceScale_GBD, Ratio_GBD, Initial_B_fR, Initial_C_fR
+        !real(dl) :: PPlus, yPlus, CoeffA_Part, yStar
 
         real(dl) :: y(num_eq+1), ydot(num_eq+1)
         real(dl) :: dN
@@ -418,8 +421,9 @@ contains
 
         Omegarad_EFT       = OmegaGamma_EFT + OmegaNu_EFT
 
-        EquivalenceScale_GBD = (Omegarad_EFT+ OmegaMassiveNu_EFT)/Omegam_EFT
-        Ratio_GBD = EquivalenceScale_GBD/Exp( self%x_initial )
+        !> this will be removed soon.
+        !EquivalenceScale_GBD = (Omegarad_EFT+ OmegaMassiveNu_EFT)/Omegam_EFT
+        !Ratio_GBD = EquivalenceScale_GBD/Exp( self%x_initial )
 
         ! 2) Set initial conditions:
         !> need to modify this
@@ -432,9 +436,16 @@ contains
         !> defining the time-step
         dN = (self%x_final - self%x_initial)/self%designer_num_points
 
+        if( DebugEFTCAMB ) then
+            write(*,*) "dN:",dN
+        end if
+
         !> Loop to fill the interpolation arrays
         do  i = 1, self%EFTOmega%num_points
 
+            !> tests (to be removed in the final version).
+            !write(*,*) "y:",y
+            !pause
 
             !> calling the solver, in this case gl10
             call gl10(num_eq+1,derivs, y, dN)
@@ -499,7 +510,7 @@ contains
 
                 !> compute the function g(x) and its derivatives:
                 EFT_E_gfun    = -(Log( self%DesGBDwDE%integral(a) ) -2._dl*N)/3._dl
-                EFT_E_gfunp   = 1._dl +self%DesGBDwDE%value(a)
+                EFT_E_gfunp   = 1._dl + self%DesGBDwDE%value(a)
                 EFT_E_gfunpp  = Exp(N)*self%DesGBDwDE%first_derivative(a)
                 EFT_E_gfunppp = Exp(N)*self%DesGBDwDE%first_derivative(a) +Exp(2._dl*N)*self%DesGBDwDE%second_derivative(a)
 
@@ -748,7 +759,7 @@ contains
             !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
-                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind)
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind), X, self%DesGBDwDE%value(a), X_p/a
                     !> the following was used to check the solutions and the pieces of the differential equation
                     !write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa,(1._dl + ompp)/omp,                   &
                     !                        (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X)),                 &
@@ -802,6 +813,7 @@ contains
         write(*,'(a24,F12.6)') '   xi                  =', self%xi
         write(*,*)
         write(*,'(a,I3)')      '   coupling type       =', self%coupling_type
+        write(*,'(a24,F12.6)') '   a_ini               =', exp(self%x_initial)
         write(*,*)
 
 

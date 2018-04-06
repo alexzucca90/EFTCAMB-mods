@@ -44,10 +44,10 @@ module EFTCAMB_designer_fR_mod
 
     !> adding the interpolated function and the reconstructed dark energy
     use EFTCAMB_interpolated_function_1D
-    use EFTCAMB_reconstructed_fit_parametrizations_1D
-    use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
-    use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
     use EFTCAMB_power_law_DE_parametrizations_1D
+    use EFTCAMB_hyperbolic_tangent_parametrizations_1D
+    use EFTCAMB_gaussian_hyperbolic_tangent_parametrizations_1D
+    use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
 
     implicit none
 
@@ -77,6 +77,14 @@ module EFTCAMB_designer_fR_mod
         integer  :: designer_num_points = 1000                            !< Number of points sampled by the designer code.
         real(dl) :: x_initial           = log(10._dl**(-8._dl))           !< log(a start)
         real(dl) :: x_final             = 0.0_dl                          !< log(a final)
+
+!> AZ: new stuff for experimenting
+! want to do the sampling of B0
+!logical :: DesfR_sampling_B0 = .false.
+!integer, parameter :: n_samples = 1000
+! adding a few arrays.
+!real(dl) ::
+
 
     contains
 
@@ -143,28 +151,31 @@ contains
         if ( allocated(self%DesfRxDE) ) deallocate(self%DesfRxDE)
         select case ( self%EFTxDE )
             case(0)
-                ! this is actually not tested yet
                 allocate( constant_parametrization_1D::self%DesfRxDE )
             case(1)
                 allocate( power_law_DE_parametrization_1D::self%DesfRxDE )
-                call self%DesfRxDE%set_param_names(['GBDwDE','GBDomL'], ['w_{\rm DE}','\Omega_{L}'])
+                call self%DesfRxDE%set_param_names(['EFTxDE_wDE'], ['w_{\rm DE}'])
             case(2)
-                allocate( reconstructed_DE_fit_parametrization_1D::self%DesfRxDE )
-                call self%DesfRxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+                allocate( hyperbolic_tangent_parametrization_1D::self%DesfRxDE )
+                call self%DesfRxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C'], ['A','B','C'])
             case(3)
-                allocate( reconstructed_DE_fit_tracking_parametrization_1D::self%DesfRxDE )
-                call self%DesfRxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','O_L'])
+                allocate( gaussian_hyperbolic_tangent_parametrization_1D::self%DesfRxDE )
+                call self%DesfRxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D', 'EFTxDE_E'], ['A','B','C','D','E'])
             case(4)
+                allocate( hyperbolic_tangent_tracking_parametrization_1D::self%DesfRxDE )
+                call self%DesfRxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D'], ['A','B','C','D'])
+            case(5)
                 allocate( interpolated_function_1D::self%DesfRxDE )
                 call self%DesfRxDE%set_param_names(['xDE_filename  '])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTxDE =', self%EFTxDE
-                write(*,'(a)')    'Choose EFTxDE < 4.'
+                write(*,'(a)')    'Choose EFTxDE < 6.'
         end select
+
         ! AZ MOD END
 
         ! initialize the names:
-        call self%DesfRxDE%set_name( 'EFTw', 'w' )
+        call self%DesfRxDE%set_name( 'EFTx', 'X' )
 
     end subroutine EFTCAMBDesignerFRAllocateModelSelection
 
@@ -331,7 +342,7 @@ contains
             & +(18._dl-3._dl*Initial_B_fR)*wDE +9._dl -3._dl*Initial_B_fR +Initial_C_fR)
 
         !yStar = CoeffA_Part*Omegavac_EFT*Exp(-2._dl*self%x_initial)*self%DesfRwDE%integral( Exp(self%x_initial) )
-        yStar = CoeffA_Part*EFT_X
+        yStar = CoeffA_Part*Omegavac_EFT*EFT_X
         !> AZ MOD END
 
         ! 3) Set initial conditions:
@@ -480,13 +491,13 @@ contains
             !    & +Omegavac_EFT*exp(-3._dl*EFT_E_gfun) + EFT_E_nu
             EFunction = +OmegaRad_EFT*exp(-4._dl*x)&
                 & +Omegam_EFT*exp(-3._dl*x)&
-                & +EFT_X + EFT_E_nu
+                & +Omegavac_EFT*EFT_X + EFT_E_nu
             !EFunPrime = -4._dl*OmegaRad_EFT*exp(-4._dl*x)&
             !    & -3._dl*Omegam_EFT*exp(-3._dl*x)&
             !    & -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun) +EFT_EP_nu
             EFunPrime = -4._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & -3._dl*Omegam_EFT*exp(-3._dl*x)&
-                & +EFT_Xp +EFT_EP_nu
+                & +Omegavac_EFT*EFT_Xp +EFT_EP_nu
             !> AZ MOD END
 
             ! Compute everything of massive nu again to get the time derivatives:
@@ -544,17 +555,20 @@ contains
 
             EFunPrime2 = 16._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & +9._dl*Omegam_EFT*exp(-3._dl*x)&
-                & + EFT_Xpp + EFT_EPP_nu
+                & + Omegavac_EFT*EFT_Xpp + EFT_EPP_nu
             EFunPrime3 = -64._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & -27._dl*Omegam_EFT*exp(-3._dl*x)&
-                & + EFT_Xppp + EFT_E3P_nu
+                & + Omegavac_EFT*EFT_Xppp + EFT_E3P_nu
             !> AZ MOD END
 
             ! 4) Get the equation of motion:
             ydot(1) = y(2)
+            !ydot(2) = (1._dl+0.5_dl*EFunPrime/EFunction+(4._dl*EFunPrime2+EFunPrime3)/(4._dl*EFunPrime+EFunPrime2))*y(2) &
+            !    & -0.5_dl*(4._dl*EFunPrime+EFunPrime2)/EFunction*y(1) &
+            !    & -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*(4._dl*EFunPrime+EFunPrime2)/EFunction
             ydot(2) = (1._dl+0.5_dl*EFunPrime/EFunction+(4._dl*EFunPrime2+EFunPrime3)/(4._dl*EFunPrime+EFunPrime2))*y(2) &
                 & -0.5_dl*(4._dl*EFunPrime+EFunPrime2)/EFunction*y(1) &
-                & -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*(4._dl*EFunPrime+EFunPrime2)/EFunction
+                & -3._dl*Omegavac_EFT*EFT_X*(4._dl*EFunPrime+EFunPrime2)/EFunction
 
         end subroutine
 
@@ -648,13 +662,13 @@ contains
             !    & +Omegavac_EFT*exp(-3._dl*EFT_E_gfun) + EFT_E_nu
             EFunction = +OmegaRad_EFT*exp(-4._dl*x)&
                 & +Omegam_EFT*exp(-3._dl*x)&
-                & +EFT_X + EFT_E_nu
+                & +Omegavac_EFT*EFT_X + EFT_E_nu
             !EFunPrime = -4._dl*OmegaRad_EFT*exp(-4._dl*x)&
             !    & -3._dl*Omegam_EFT*exp(-3._dl*x)&
             !    & -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun) +EFT_EP_nu
             EFunPrime = -4._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & -3._dl*Omegam_EFT*exp(-3._dl*x)&
-                & +EFT_Xp +EFT_EP_nu
+                & +Omegavac_EFT*EFT_Xp +EFT_EP_nu
             !> AZ MOD END
 
             ! Compute everything of massive nu again to get the time derivatives:
@@ -712,19 +726,19 @@ contains
 
             EFunPrime2 = 16._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & +9._dl*Omegam_EFT*exp(-3._dl*x)&
-                & + EFT_Xpp + EFT_EPP_nu
+                & + Omegavac_EFT*EFT_Xpp + EFT_EPP_nu
             EFunPrime3 = -64._dl*OmegaRad_EFT*exp(-4._dl*x)&
                 & -27._dl*Omegam_EFT*exp(-3._dl*x)&
-                & + EFT_Xppp + EFT_E3P_nu
+                & + Omegavac_EFT*EFT_Xppp + EFT_E3P_nu
 
 
             ! compute E dark energy:
             !Ede   = +Omegavac_EFT*exp(-3._dl*EFT_E_gfun)
             !Edep  = -3._dl*Omegavac_EFT*EFT_E_gfunp*exp(-3._dl*EFT_E_gfun)
             !Edepp = -3._dl*Omegavac_EFT*exp(-3._dl*EFT_E_gfun)*(EFT_E_gfunpp -3._dl*EFT_E_gfunp**2)
-            Ede     = EFT_X
-            Edep    = EFT_Xp
-            Edepp   = EFT_Xpp
+            Ede     = Omegavac_EFT*EFT_X
+            Edep    = Omegavac_EFT*EFT_Xp
+            Edepp   = Omegavac_EFT*EFT_Xpp
             !> AZ MOD END
 
             ! call derivs to compute ydot at a given time:
@@ -1114,7 +1128,7 @@ contains
         if ( a .le. 1.d-10 ) then
             temp = eft_cache%grhoa2
         else
-            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%DesfRxDE%value(a) * a**4
+            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%DesfRxDE%value(a) * a**4 *eft_par_cache%omegav
         end if
         !> AZ MOD END
         EFTCAMBDesignerFRComputeDtauda = sqrt(3/temp)
@@ -1134,7 +1148,7 @@ contains
 
         !eft_cache%grhov_t = eft_par_cache%grhov*self%DesfRwDE%integral(a)
         ! AZ MOD START: using X_DE
-        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * self%DesfRxDE%value(a) * a**2
+        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 *eft_par_cache%omegav * self%DesfRxDE%value(a) * a**2
         ! AZ MOD END
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
 
@@ -1152,11 +1166,11 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         ! AZ MOD START: replacing w_DE with X_DE
-        eft_cache%gpiv_t = -a**3 * self%DesfRxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%DesfRxDE%value(a)
+        eft_cache%gpiv_t = eft_par_cache%omegav*(-a**3 * self%DesfRxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%DesfRxDE%value(a))
         eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
 
         eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
-        & + eft_cache%adotoa * a**2 * eft_par_cache%h0_Mpc**2 * (2._dl * self%DesfRxDE%value(a) &
+        & + eft_cache%adotoa * a**2 * eft_par_cache%h0_Mpc**2  * eft_par_cache%omegav * ( 2._dl * self%DesfRxDE%value(a) &
         & + 2.5_dl * a * self%DesfRxDE%first_derivative(a) + 0.5_dl * a**2 * self%DesfRxDE%second_derivative(a) )&
         & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
         ! AZ MOD END

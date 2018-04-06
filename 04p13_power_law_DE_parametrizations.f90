@@ -46,7 +46,6 @@ module EFTCAMB_power_law_DE_parametrizations_1D
     type, extends ( parametrized_function_1D ) :: power_law_DE_parametrization_1D
 
         real(dl) :: wDE
-        real(dl) :: omegaL
 
     contains
 
@@ -80,7 +79,7 @@ contains
         class(power_law_DE_parametrization_1D) :: self       !< the base class
 
         ! initialize the number of parameters:
-        self%parameter_number = 2
+        self%parameter_number = 1
 
     end subroutine PowerLawDEParametrized1DSetParamNumber
 
@@ -94,7 +93,7 @@ contains
         real(dl), dimension(self%parameter_number), intent(in)      :: array  !< input array with the values of the parameters.
 
         self%wDE    = array(1)
-        self%omegaL = array(2)
+
 
     end subroutine PowerLawDEParametrized1DInitParams
 
@@ -111,8 +110,6 @@ contains
         select case (i)
             case(1)
                 value = self%wDE
-            case(2)
-                value = self%omegaL
             case default
                 write(*,*) 'Illegal index for parameter_names.'
                 write(*,*) 'Maximum value is:', self%parameter_number
@@ -165,10 +162,10 @@ contains
         real(dl) :: PowerLawDEParametrized1DValue                        !< the output value
 
         !> value of the function
-        PowerLawDEParametrized1DValue = self%omegaL * x**(-3._dl * (1._dl + self%wDE))
+        PowerLawDEParametrized1DValue = x**(-3._dl * (1._dl + self%wDE))
 
         if (x == 0.d0) then
-            PowerLawDEParametrized1DValue = 1.d0
+            PowerLawDEParametrized1DValue = 1.d3
         end if
 
     end function PowerLawDEParametrized1DValue
@@ -186,7 +183,7 @@ contains
 
 
         !> firt derivative
-        PowerLawDEParametrized1DFirstDerivative = -(3._dl + 3._dl * self%wDE) * self%omegaL * x**(-3._dl *  self%wDE-4._dl)
+        PowerLawDEParametrized1DFirstDerivative = -(3._dl + 3._dl * self%wDE) * x**(-3._dl *  self%wDE-4._dl)
 
 
     end function PowerLawDEParametrized1DFirstDerivative
@@ -197,13 +194,13 @@ contains
 
         implicit none
 
-        class(power_law_DE_parametrization_1D)     :: self      !< the base class
-        real(dl), intent(in)                               :: x         !< the input scale factor
-        type(EFTCAMB_timestep_cache), intent(in), optional :: eft_cache !< the optional input EFTCAMB cache
+        class(power_law_DE_parametrization_1D)              :: self      !< the base class
+        real(dl), intent(in)                                :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional  :: eft_cache !< the optional input EFTCAMB cache
         real(dl) :: PowerLawDEParametrized1DSecondDerivative      !< the output value
 
         !> second derivative
-        PowerLawDEParametrized1DSecondDerivative =  (3._dl + 3._dl *self%wDE) * (3._dl * self%wDE + 4._dl ) * self%omegaL * x**(-3._dl *self%wDE - 5._dl)
+        PowerLawDEParametrized1DSecondDerivative =  (3._dl + 3._dl *self%wDE) * (3._dl * self%wDE + 4._dl ) *  x**(-3._dl *self%wDE - 5._dl)
 
     end function PowerLawDEParametrized1DSecondDerivative
 
@@ -213,15 +210,15 @@ contains
 
         implicit none
 
-        class(power_law_DE_parametrization_1D)     :: self      !< the base class
+        class(power_law_DE_parametrization_1D)                      :: self      !< the base class
         real(dl), intent(in)                                        :: x         !< the input scale factor
         type(EFTCAMB_timestep_cache), intent(in), optional          :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: PowerLawDEParametrized1DThirdDerivative       !< the output value
+        real(dl) :: PowerLawDEParametrized1DThirdDerivative                      !< the output value
 
 
         !> third derivative
         PowerLawDEParametrized1DThirdDerivative = - (3._dl  + 3._dl * self%wDE) * (3._dl * self%wDE + 4._dl ) * &
-                                                    (3._dl * self%wDE + 5._dl) * self%omegaL * x**(- 3._dl *self%wDE - 6._dl)
+                                                    (3._dl * self%wDE + 5._dl) * x**(- 3._dl *self%wDE - 6._dl)
 
 
     end function PowerLawDEParametrized1DThirdDerivative
@@ -232,10 +229,10 @@ contains
 
         implicit none
 
-        class(power_law_DE_parametrization_1D)     :: self      !< the base class
-        real(dl), intent(in)                                        :: x         !< the input scale factor
-        type(EFTCAMB_timestep_cache), intent(in), optional          :: eft_cache !< the optional input EFTCAMB cache
-        real(dl) :: PowerLawDEParametrized1DIntegral                !< the output value
+        class(power_law_DE_parametrization_1D)              :: self      !< the base class
+        real(dl), intent(in)                                :: x         !< the input scale factor
+        type(EFTCAMB_timestep_cache), intent(in), optional  :: eft_cache !< the optional input EFTCAMB cache
+        real(dl) :: PowerLawDEParametrized1DIntegral                     !< the output value
 
         write(*,*) "WARNING: the function Power_Law_DE%Integral is not supposed to be called. Returning 0"
         PowerLawDEParametrized1DIntegral = 0._dl

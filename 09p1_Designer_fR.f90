@@ -42,7 +42,7 @@ module EFTCAMB_designer_fR
 
 !> adding the interpolated function and the reconstructed dark energy
 use EFTCAMB_interpolated_function_1D
-use EFTCAMB_reconstructed_fit_parametrizations_1D
+use EFTCAMB_hyperbolic_tangent_wDE_parametrizations_1D
 
     implicit none
 
@@ -156,8 +156,8 @@ contains
                 allocate( interpolated_function_1D::self%DesfRwDE )
                 call self%DesfRwDE%set_param_names(['wDE_filename  '])
             case(7)
-                allocate( reconstructed_fit_parametrization_1D::self%DesfRwDE)
-                call self%DesfRwDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+                allocate( hyperbolic_tangent_wDE_parametrization_1D::self%DesfRwDE)
+                call self%DesfRwDE%set_param_names(['EFTwDE_A','EFTwDE_B', 'EFTwDE_C'], ['w_A','w_B','w_C'])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTwDE =', self%EFTwDE
                 write(*,'(a)')    'Please select an appropriate model.'

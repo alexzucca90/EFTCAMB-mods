@@ -49,10 +49,11 @@ module EFTCAMB_pure_EFT_mod
 
 
 !> adding the reconstructed dark energy
-use EFTCAMB_reconstructed_fit_parametrizations_1D
-use EFTCAMB_reconstructed_DE_fit_parametrizations_1D
-use EFTCAMB_reconstructed_DE_fit_tracking_parametrizations_1D
+use EFTCAMB_interpolated_function_1D
 use EFTCAMB_power_law_DE_parametrizations_1D
+use EFTCAMB_hyperbolic_tangent_parametrizations_1D
+use EFTCAMB_gaussian_hyperbolic_tangent_parametrizations_1D
+use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
 
 
     implicit none
@@ -178,23 +179,25 @@ contains
         if ( allocated(self%PureEFTxDE) ) deallocate(self%PureEFTxDE)
         select case ( self%EFTxDE )
             case(0)
-                ! this is actually not tested yet
                 allocate( constant_parametrization_1D::self%PureEFTxDE )
             case(1)
                 allocate( power_law_DE_parametrization_1D::self%PureEFTxDE )
-                call self%PureEFTxDE%set_param_names(['GBDwDE','GBDomL'], ['w_{\rm DE}','\Omega_{L}'])
+                call self%PureEFTxDE%set_param_names(['EFTxDE_wDE'], ['w_{\rm DE}'])
             case(2)
-                allocate( reconstructed_DE_fit_parametrization_1D::self%PureEFTxDE )
-                call self%PureEFTxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDp5 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','P_5','O_L'])
+                allocate( hyperbolic_tangent_parametrization_1D::self%PureEFTxDE )
+                call self%PureEFTxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C'], ['A','B','C'])
             case(3)
-                allocate( reconstructed_DE_fit_tracking_parametrization_1D::self%PureEFTxDE )
-                call self%PureEFTxDE%set_param_names(['GBDp1 ','GBDp2 ', 'GBDp3 ', 'GBDp4 ', 'GBDomL'], ['P_1','P_2','P_3','P_4','O_L'])
+                allocate( gaussian_hyperbolic_tangent_parametrization_1D::self%PureEFTxDE )
+                call self%PureEFTxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D', 'EFTxDE_E'], ['A','B','C','D','E'])
             case(4)
+                allocate( hyperbolic_tangent_tracking_parametrization_1D::self%PureEFTxDE )
+                call self%PureEFTxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D'], ['A','B','C','D'])
+            case(5)
                 allocate( interpolated_function_1D::self%PureEFTxDE )
                 call self%PureEFTxDE%set_param_names(['xDE_filename  '])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTxDE =', self%EFTxDE
-                write(*,'(a)')    'Choose EFTxDE < 4.'
+                write(*,'(a)')    'Choose EFTxDE < 6.'
         end select
         ! AZ MOD END
         ! allocate Gamma1:
@@ -854,13 +857,13 @@ contains
         ! AZ MOD START: replacing w_DE with X_DE in the background EFT functions
         eft_cache%EFTc         = ( eft_cache%adotoa**2 - eft_cache%Hdot )*( eft_cache%EFTOmegaV + 0.5_dl*a*eft_cache%EFTOmegaP ) &
             & -0.5_dl*( a*eft_cache%adotoa )**2*eft_cache%EFTOmegaPP&
-            & -0.5_dl* a**3 * self%PureEFTxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2
+            & -0.5_dl* a**3 * self%PureEFTxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav
         eft_cache%EFTLambda    = -eft_cache%EFTOmegaV*( 2._dl*eft_cache%Hdot +eft_cache%adotoa**2 ) &
             & -a*eft_cache%EFTOmegaP*( 2._dl*eft_cache%adotoa**2 + eft_cache%Hdot ) &
             & -( a*eft_cache%adotoa )**2*eft_cache%EFTOmegaPP &
-            & -eft_par_cache%h0_Mpc**2 * a**3 * self%PureEFTxDE%first_derivative(a) &
-            & -3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%PureEFTxDE%value(a)
-        eft_cache%EFTcdot      = -0.5_dl * eft_cache%adotoa * eft_par_cache%h0_Mpc**2 * a**3 * (a * self%PureEFTxDE%second_derivative(a) + self%PureEFTxDE%first_derivative(a))&
+            & -eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav * a**3 * self%PureEFTxDE%first_derivative(a) &
+            & -3._dl*eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav * a**2 * self%PureEFTxDE%value(a)
+        eft_cache%EFTcdot      = -0.5_dl * eft_cache%adotoa * eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav * a**3 * (a * self%PureEFTxDE%second_derivative(a) + self%PureEFTxDE%first_derivative(a))&
             & -eft_cache%EFTOmegaV*( eft_cache%Hdotdot -4._dl*eft_cache%adotoa*eft_cache%Hdot +2._dl*eft_cache%adotoa**3 ) &
             & +0.5_dl*a*eft_cache%EFTOmegaP*( -eft_cache%Hdotdot +eft_cache%adotoa*eft_cache%Hdot +eft_cache%adotoa**3) &
             & +0.5_dl*a**2*eft_cache%adotoa*eft_cache%EFTOmegaPP*( eft_cache%adotoa**2 -3._dl*eft_cache%Hdot ) &
@@ -869,7 +872,7 @@ contains
             & -a*eft_cache%EFTOmegaP*( +eft_cache%Hdotdot +5._dl*eft_cache%adotoa*eft_cache%Hdot -eft_cache%adotoa**3  ) &
             & -a**2*eft_cache%EFTOmegaPP*eft_cache%adotoa*( +2._dl*eft_cache%adotoa**2 +3._dl*eft_cache%Hdot )&
             & -(a*eft_cache%adotoa)**3*eft_cache%EFTOmegaPPP &
-            & -eft_cache%adotoa * eft_par_cache%h0_Mpc**2 * a**3 * ( a * self%PureEFTxDE%second_derivative(a) + self%PureEFTxDE%first_derivative(a) )
+            & -eft_cache%adotoa * eft_par_cache%h0_Mpc**2 * eft_par_cache%omegav * a**3 * ( a * self%PureEFTxDE%second_derivative(a) + self%PureEFTxDE%first_derivative(a) )
         ! AZ MOD END
 
     end subroutine EFTCAMBPureEFTstdBackgroundEFTFunctions
@@ -933,7 +936,7 @@ contains
             !> just a numerical trick
             temp = eft_cache%grhoa2
         else
-            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**4
+            temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**4 *eft_par_cache%omegav
         end if
          ! AZ MOD END
 
@@ -953,7 +956,7 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         ! AZ MOD START: using X_DE
-        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**2
+        eft_cache%grhov_t = 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**2 * eft_par_cache%omegav
         ! AZ MOD END
         eft_cache%adotoa  = sqrt( ( eft_cache%grhom_t +eft_cache%grhov_t )/3._dl )
 
@@ -971,7 +974,7 @@ contains
         type(EFTCAMB_timestep_cache ), intent(inout) :: eft_cache     !< the EFTCAMB timestep cache that contains all the physical values.
 
         ! AZ MOD START: replacing w_DE with the reconstructed X_DE
-        eft_cache%gpiv_t = -a**3 * self%PureEFTxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%PureEFTxDE%value(a)
+        eft_cache%gpiv_t = eft_par_cache%omegav*(-a**3 * self%PureEFTxDE%first_derivative(a) * eft_par_cache%h0_Mpc**2 - 3._dl*eft_par_cache%h0_Mpc**2 * a**2 * self%PureEFTxDE%value(a))
         eft_cache%Hdot    = -0.5_dl*( eft_cache%adotoa**2 +eft_cache%gpresm_t +eft_cache%gpiv_t )
 
         !eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
@@ -979,7 +982,7 @@ contains
         !    & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
 
         eft_cache%Hdotdot = eft_cache%adotoa*( ( eft_cache%grhob_t +eft_cache%grhoc_t)/6._dl +2._dl*( eft_cache%grhor_t +eft_cache%grhog_t)/3._dl ) &
-            & + eft_cache%adotoa * a**2 * eft_par_cache%h0_Mpc**2 * (2._dl * self%PureEFTxDE%value(a) &
+            & + eft_cache%adotoa * a**2 * eft_par_cache%omegav * eft_par_cache%h0_Mpc**2 * (2._dl * self%PureEFTxDE%value(a) &
             & + 2.5_dl * a * self%PureEFTxDE%first_derivative(a) + 0.5_dl * a**2 * self%PureEFTxDE%second_derivative(a) )&
             & +eft_cache%adotoa*eft_cache%grhonu_tot/6._dl -0.5_dl*eft_cache%adotoa*eft_cache%gpinu_tot -0.5_dl*eft_cache%gpinudot_tot
         ! AZ MOD END
