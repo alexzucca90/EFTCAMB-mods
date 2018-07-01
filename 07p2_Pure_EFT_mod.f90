@@ -20,7 +20,7 @@
 
 !----------------------------------------------------------------------------------------
 !> This module contains the definition of the Pure EFT model in which the EFT is described
-!! by six functions of time and X_DE. Please refer to the numerical notes for details.
+!! by six functions of time and xDE. Please refer to the numerical notes for details.
 
 !> @author Bin Hu, Marco Raveri, Simone Peirone
 
@@ -46,15 +46,16 @@ module EFTCAMB_pure_EFT_mod
     use EFTCAMB_taylor_parametrizations_1D
     use EFTCAMB_abstract_model_designer
     use EFTCAMB_interpolated_function_1D
-
+    use EFTCAMB_polynomial_parametrizations_1D
 
 !> adding the reconstructed dark energy
-use EFTCAMB_interpolated_function_1D
+!use EFTCAMB_interpolated_function_1D
 use EFTCAMB_power_law_DE_parametrizations_1D
 use EFTCAMB_hyperbolic_tangent_parametrizations_1D
 use EFTCAMB_gaussian_hyperbolic_tangent_parametrizations_1D
 use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
 
+use EFT_sampler
 
     implicit none
 
@@ -79,6 +80,9 @@ use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
         ! selection flag for Horndeski:
         logical  :: PureEFTHorndeski    !< Selects wether to use the Horndeski bound on EFT functions.
 
+        ! sampling variable
+        logical :: sampling_xDE
+
         ! the pure EFT functions:
         class( parametrized_function_1D ), allocatable :: PureEFTOmega    !< The pure EFT function Omega.
         class( parametrized_function_1D ), allocatable :: PureEFTxDE      !< The pure EFT function X_DE.
@@ -96,6 +100,8 @@ use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
         procedure :: allocate_model_selection        => EFTCAMBPureEFTstdAllocateModelSelection      !< subroutine that allocates the model selection.
         procedure :: init_model_parameters           => EFTCAMBPureEFTstdInitModelParameters         !< subroutine that initializes the model parameters based on the values found in an input array.
         procedure :: init_model_parameters_from_file => EFTCAMBPureEFTstdInitModelParametersFromFile !< subroutine that reads the parameters of the model from file.
+        procedure :: init_model_parameters_for_sampling => EFTCAMBPureEFTstdInitModelParametersSampling !< subroutine that initializes the parameters during the sampling
+
         ! utility functions:
         procedure :: compute_param_number  => EFTCAMBPureEFTstdComputeParametersNumber    !< subroutine that computes the number of parameters of the model.
         procedure :: feedback              => EFTCAMBPureEFTstdFeedback                   !< subroutine that prints on the screen feedback information about the model.
@@ -110,6 +116,7 @@ use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
         procedure :: compute_H_derivs                  => EFTCAMBPureEFTstdComputeHubbleDer         !< subroutine that computes the two derivatives wrt conformal time of H.
         ! stability procedures:
         procedure :: additional_model_stability        => EFTCAMBPureEFTstdAdditionalModelStability !< function that computes model specific stability requirements.
+
 
     end type EFTCAMB_mod_pure_EFT
 
@@ -169,7 +176,14 @@ contains
             case(5)
                 allocate(interpolated_function_1D::self%PureEFTOmega)
                 call self%PureEFTOmega%set_param_names(['Omega_filename'])
-            ! AZ MOD: end
+
+            !> adding a 5th order polynomial
+            case(6)
+                allocate(polynomial_parametrization_1D::self%PureEFTOmega)
+                call self%PureEFTOmega%set_param_names( ['alpha0', 'alpha1', 'alpha2', 'alpha3', 'alpha4', 'alpha5'],&
+                                            & ['\alpha_{0}','\alpha_{1}','\alpha_{2}','\alpha_{3}','\alpha_{4}','\alpha_{5}'] )
+            case(7)
+             ! AZ MOD: end
             case default
                 write(*,'(a,I3)') 'No model corresponding to PureEFTmodelOmega =', self%PureEFTmodelOmega
                 write(*,'(a)')    'Please select an appropriate model.'
@@ -194,7 +208,7 @@ contains
                 call self%PureEFTxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D'], ['A','B','C','D'])
             case(5)
                 allocate( interpolated_function_1D::self%PureEFTxDE )
-                call self%PureEFTxDE%set_param_names(['xDE_filename  '])
+                call self%PureEFTxDE%set_param_names(['xDE_filename  ', 'xDE_num_bins  '])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTxDE =', self%EFTxDE
                 write(*,'(a)')    'Choose EFTxDE < 6.'
@@ -932,13 +946,17 @@ contains
 
 
         ! AZ MOD START: using X_DE
-        if ( a .le. 1.d-10 ) then
+        if ( a .le. EFTbackgroundcutoff ) then
             !> just a numerical trick
             temp = eft_cache%grhoa2
         else
             temp = eft_cache%grhoa2 + 3._dl * eft_par_cache%h0_Mpc**2 * self%PureEFTxDE%value(a) * a**4 *eft_par_cache%omegav
         end if
          ! AZ MOD END
+
+        !if (temp .le. 0.d0) then
+            !write(*,*) "ERROR: dtauda imaginary at a:", a, ". X(a) = ", self%PureEFTxDE%value(a)
+        !end if
 
         EFTCAMBPureEFTstdComputeDtauda = sqrt(3._dl/temp)
 
@@ -1011,6 +1029,44 @@ contains
         !if ( w_DE > -1._dl/3._dl ) EFTCAMBPureEFTstdAdditionalModelStability = .False.
 
     end function EFTCAMBPureEFTstdAdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that reads the parameters of the model from file.
+    subroutine EFTCAMBPureEFTstdInitModelParametersSampling( self, array, sampling_params )
+
+        implicit none
+
+        class(EFTCAMB_mod_pure_EFT)                            :: self   !< the base class
+        real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters of the model.
+        Type(EFTSamplingParameters) :: sampling_params
+
+        real(dl), allocatable, dimension(:)                    :: temp
+        integer :: num_params_function, num_params_temp, i
+
+        num_params_temp     = 1
+
+        ! first elements are Omega parameters:
+        num_params_function = self%PureEFTOmega%parameter_number
+        allocate( temp(num_params_function) )
+
+        do i = 1, num_params_function
+            temp(i)         = array(num_params_temp)
+            num_params_temp = num_params_temp +1
+        end do
+
+        call self%PureEFTOmega%init_parameters(temp)
+        deallocate( temp )
+
+        ! AZ MOD START
+        ! then the x_DE sample:
+        call self%PureEFTxDE%init_from_code( sampling_params%xDE_scale_factor_means, sampling_params%xDE_sample )
+        ! AZ MOD END
+
+
+
+
+
+    end subroutine EFTCAMBPureEFTstdInitModelParametersSampling
 
     ! ---------------------------------------------------------------------------------------------
 

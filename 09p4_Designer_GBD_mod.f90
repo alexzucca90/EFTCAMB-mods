@@ -49,6 +49,7 @@ module EFTCAMB_designer_GBD_2
     use EFTCAMB_gaussian_hyperbolic_tangent_parametrizations_1D
     use EFTCAMB_hyperbolic_tangent_tracking_parametrizations_1D
 
+    use EFT_sampler
 
     implicit none
 
@@ -75,6 +76,7 @@ module EFTCAMB_designer_GBD_2
         ! the pure EFT functions:
         class( parametrized_function_1D ), allocatable ::  DesGBDxDE     !< The pure EFT function X := rhoDE(a)/rho_crit(a).
 
+
         ! the interpolated EFT functions that come out of the background sover:
         type(equispaced_linear_interpolate_function_1D) :: EFTOmega       !< The interpolated function Omega (and derivatives).
         type(equispaced_linear_interpolate_function_1D) :: EFTLambda      !< The interpolated function Lambda (and derivatives).
@@ -92,6 +94,8 @@ module EFTCAMB_designer_GBD_2
         procedure :: allocate_model_selection        => EFTCAMBDesignerGBD2AllocateModelSelection       !< subroutine that allocates the model selection.
         procedure :: init_model_parameters           => EFTCAMBDesignerGBD2InitModelParameters          !< subroutine taht initializes the model parameters based on the values found in an input array.
         procedure :: init_model_parameters_from_file => EFTCAMBDesignerGBD2InitModelParametersFromFile  !< subroutine that reads the parameters of the model from file.
+        procedure :: init_model_parameters_for_sampling => EFTCAMBDesignerGBD2InitModelParametersSampling  !< subroutine that initializes the model params for sampling xDE
+
 
         ! background solver:
         procedure :: initialize_background           => EFTCAMBDesignerGBD2InitBackground               !< subroutine that initializes the background of designer GBD.
@@ -138,9 +142,6 @@ contains
         !> read coupling type
         self%coupling_type      = Ini_Read_Int_File( Ini, 'GBD_coupling_type', 3)
 
-        !> read initial scale factor
-        self%x_initial          = Ini_Read_Double_File( Ini, 'GBD_a_initial', 1.d-8)
-        self%x_initial          = log(self%x_initial)
 
     end subroutine EFTCAMBDesignerGBD2ReadModelSelectionFromFile
 
@@ -172,8 +173,11 @@ contains
                 allocate( hyperbolic_tangent_tracking_parametrization_1D::self%DesGBDxDE )
                 call self%DesGBDxDE%set_param_names(['EFTxDE_A','EFTxDE_B', 'EFTxDE_C', 'EFTxDE_D'], ['A','B','C','D'])
             case(5)
+                !allocate( interpolated_function_1D::self%DesGBDxDE )
+                !call self%DesGBDxDE%set_param_names(['xDE_filename  '])
+                !> here need to modify this
                 allocate( interpolated_function_1D::self%DesGBDxDE )
-                call self%DesGBDxDE%set_param_names(['xDE_filename  '])
+                call self%DesGBDxDE%set_param_names(['xDE_filename  ', 'xDE_num_bins  '])
             case default
                 write(*,'(a,I3)') 'No model corresponding to EFTxDE =', self%EFTxDE
                 write(*,'(a)')    'Choose EFTxDE < 4.'
@@ -192,15 +196,17 @@ contains
 
         class(EFTCAMB_GBD_designer_2)                          :: self   !< the base class
         real(dl), dimension(self%parameter_number), intent(in) :: array  !< input array with the values of the parameters.
-        real(dl), dimension(self%parameter_number -3)          :: temp
+        real(dl), dimension(self%parameter_number -4)          :: temp
         integer                                                :: i
 
         self%phi_ini    = array(1)
         self%dphi_ini   = array(2)
         self%xi         = array(3)
+        self%x_initial  = array(4)
+
 
         do i = 1, self%parameter_number -1
-            temp(i) = array(i+3)
+            temp(i) = array(i+4)
         end do
         call self%DesGBDxDE%init_parameters(temp)
 
@@ -224,9 +230,14 @@ contains
         !> read xi
         self%xi      = Ini_Read_Double_File( Ini, 'GBD_xi',      1._dl)
 
+        !> read initial scale factor
+        self%x_initial          = Ini_Read_Double_File( Ini, 'GBD_a_initial', 1.d-8)
+        self%x_initial          = log(self%x_initial)
 
-        !> read w_DE parameters:
+
+        !> read x_DE parameters:
         call self%DesGBDxDE%init_from_file( Ini )
+    
 
     end subroutine EFTCAMBDesignerGBD2InitModelParametersFromFile
 
@@ -356,6 +367,10 @@ contains
             write(*,'(a)')
         end if
 
+        !> some temporary output
+        write(*,*) "GBD designer: a_ini, dphi_ini, xi:", exp(self%x_initial), self%dphi_ini, self%xi
+
+
         !> initialize interpolating functions
         call self%EFTOmega%initialize   ( self%designer_num_points, self%x_initial, self%x_final )
         call self%EFTLambda%initialize  ( self%designer_num_points, self%x_initial, self%x_final )
@@ -374,7 +389,12 @@ contains
         end if
 
         !> solve the background equations and store the solution:
+        write(*,*) "solving the equations"
         call self%solve_designer_equations( params_cache, success=success )
+        write(*,*) "equations solved: success,", success
+
+
+        !write(27,*) self%EFTOmega%value(1.d0)
 
         if ( DebugEFTCAMB ) then
             write(*,'(a)') "EFTCAMB designer GBD background solver. Equation solved."
@@ -398,10 +418,21 @@ contains
         real(dl) :: Omegam_EFT, Omegavac_EFT, OmegaMassiveNu_EFT, OmegaGamma_EFT, OmegaNu_EFT
         real(dl) :: Omegarad_EFT
 
-        real(dl) :: y(num_eq+1), ydot(num_eq+1)
-        real(dl) :: dN
+        !real(dl) :: y(num_eq+1), ydot(num_eq+1)
+        real(dl) :: y(num_eq), ydot(num_eq)
+        real(dl) :: N, dN, N_fin
 
         integer :: i, i_y
+
+        !> adding the parameters for dverk
+        integer :: ind = 1
+        real(dl), dimension(24) :: c = 0.d0
+        integer, parameter :: nw = num_eq + 2
+        real(dl), dimension(nw,9) :: w
+        real(dl) :: tol = 1.d-6
+
+        !> fixing the index
+        ind = 1
 
         success = .True.
 
@@ -416,9 +447,14 @@ contains
 
         ! 2) Set initial conditions:
         !> need to modify this
-        y(1) = self%x_initial
-        y(2) = self%phi_ini
-        y(3) = self%dphi_ini
+        !y(1) = self%x_initial
+        !y(2) = self%phi_ini
+        !y(3) = self%dphi_ini
+        !ydot = 0._dl
+
+        N = self%x_initial
+        y(1) = self%phi_ini
+        y(2) = self%dphi_ini
         ydot = 0._dl
 
         ! 3) Solve the equation of motion
@@ -436,27 +472,31 @@ contains
         !> Loop to fill the interpolation arrays
         do  i = 1, self%EFTOmega%num_points
 
-            !> tests (to be removed in the final version).
-!write(*,*) "y:",y
-            !pause
 
-!write(*,*) "calling gl10"
+            !> tests (to be removed in the final version)
+            N_fin = N + dN
 
             !> calling the solver, in this case gl10
-            call gl10(num_eq+1,derivs, y, dN)
+            !> substituting with dverk_std
+            !call gl10(num_eq+1,derivs, y, dN)
+            call dverk_std(num_eq, derivs, N, y, N_fin, tol, ind, c, nw, w)
 
+            !> filling the interpolation arrays
+            call output(num_eq, N, y, i)
 
             !> check if the solution is acceptable
-            do i_y=1, num_eq+1
-                if (.not. ( (y(i_y) .ge. 0._dl) .or. (y(i_y) .le. 0._dl))) then
-                    success = .False.
-                    return
-                end if
-            end do
+            !do i_y=1, num_eq+1
+            !    if (.not. ( (y(i_y) .ge. 0._dl) .or. (y(i_y) .le. 0._dl))) then
+            !        success = .False.
+            !        return
+            !    end if
+            !end do
 
-!write(*,*) "calling output"
-            !> filling the interpolation arrays
-            call output(num_eq+1,y,i)
+            if (ind<0) then
+                write(*,*) "ERROR dverk: ind:", ind
+                success = .False.
+                return
+            end if
 
         end do
 
@@ -465,7 +505,7 @@ contains
 
     contains
 
-        subroutine derivs(num,y,yprime)
+        subroutine derivs(num,N, y,yprime)
 
             implicit none
 
@@ -485,7 +525,7 @@ contains
             real(dl) :: Em_p, Er_p, Enu_p, X_p      !< derivatives of normalized energy densities
             real(dl) :: X_pp                        !< second derivative of the normalized DE density
 
-            associate (N => y(1),  phi => y(2), pi=>y(3), dN => yprime(1), dphi => yprime(2) , ddphi => yprime(3))
+            associate (phi => y(1), pi=>y(2),  dphi => yprime(1) , ddphi => yprime(2))
 
                 !> convert N in a
                 a = exp(N)
@@ -531,7 +571,7 @@ contains
                 !> now the equations of motion
 
                 !> derivative of N=ln(a)
-                dN = 1.d0
+                !dN = 1.d0
 
                 !> phi prime
                 dphi = pi
@@ -547,13 +587,14 @@ contains
         ! ---------------------------------------------------------------------------------------------
         !> Subroutine that takes the solution of the background GBD equations and stores the values of
         !> the EFT functions.
-        subroutine output( num, y, ind )
+        subroutine output( num, N,  y, ind )
 
             implicit none
 
             integer , intent(in)                    :: num  !< number of equations in the ODE system.
             integer , intent(in)                    :: ind  !< index of the EFT functions interpolation tables to fill.
             real(dl), intent(in) , dimension(num)   :: y    !< input status of the system.
+            real(dl), intent(in)                    :: N    !< e-fold number
 
             real(dl) :: ydot(num)                           !< array of derivatives of the system
             !real(dl) :: EFT_E_gfun, EFT_E_gfunp, EFT_E_gfunpp, EFT_E_gfunppp !< effective dark energy variables (can be removed)
@@ -573,18 +614,21 @@ contains
             logical  :: is_open
 
             !> other parameters
-            real(dl) :: a, N, phi, dphi, ddphi, dddphi
+            real(dl) :: a, phi, dphi, ddphi, dddphi
             real(dl) :: adotoa, Hdot, adotdotoa
             real(dl) :: calF, V, Vprime, Vdot
             real(dl) :: Etot
 
             !> convert N in a
-            N = y(1)
+            !N = y(1)
             a = exp(N)
 
+            !> AZ TEST:
+            !write(*,*) "GBD designer output. a, X, y :", a, self%DesGBDxDE%value(a), y
+
             !> extract values of the field
-            phi     = y(2)
-            dphi    = y(3)
+            phi     = y(1)
+            dphi    = y(2)
 
             !> compute coupling function and its derivatives
             om      = self%omega_phi(phi, 0)
@@ -632,10 +676,10 @@ contains
             adotdotoa   = Hdot + adotoa**2
 
             !> start filling the EFT interpolated functions
-            call derivs( num, y, ydot )
+            call derivs( num ,N, y, ydot )
 
             !> extract ddphi
-            ddphi = ydot(3)
+            ddphi = ydot(2)
 
             !> calculating the potential - needed for the function Lambda
             !> begin with {\cal F} in the notes
@@ -738,7 +782,8 @@ contains
             !if ( .true. ) then
                 inquire( unit=33, opened=is_open )
                 if ( is_open ) then
-                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind), X, X_p/a
+                    write (33,'(20E15.5)') a, phi, dphi, ddphi,V, self%EFTOmega%y(ind), self%EFTc%y(ind), self%EFTLambda%y(ind), X, X_p/a, &
+                            & self%EFTOmega%yp(ind), self%EFTOmega%ypp(ind), self%EFTOmega%yppp(ind), adotoa, adotdotoa, Hdot
                     !> the following was used to check the solutions and the pieces of the differential equation
                     !write (33,'(20E15.5)') a, phi, dphi, ddphi,V,adotoa,adotdotoa,(1._dl + ompp)/omp,                   &
                     !                        (1._dl+0.5_dl*(3._dl*Em+4._dl*Er-Enu_p-X_p)/(Em+Er+Enu+X)),                 &
@@ -763,7 +808,7 @@ contains
 
         class(EFTCAMB_GBD_designer_2)  :: self   !< the base class
 
-        self%parameter_number = 1
+        self%parameter_number = 4
         self%parameter_number = self%parameter_number +self%DesGBDxDE%parameter_number
 
     end subroutine EFTCAMBDesignerGBD2ComputeParametersNumber
@@ -825,6 +870,10 @@ contains
         else if ( i==3 ) then
             name = TRIM('xi')
             return
+        !> the fourth parameter is x_initial
+        else if ( i==4 ) then
+            name = TRIM('x_initial')
+            return
         !> the other parameters are the w_DE parameters:
         else
             call self%DesGBDxDE%parameter_names( i-3, name )
@@ -860,9 +909,12 @@ contains
         else if ( i==3 ) then
             latexname = TRIM('\xi')
             return
+        else if ( i==3 ) then
+            latexname = TRIM('x_{\rm ini}')
+            return
         !> the other parameters are the w_DE parameters:
         else
-            call self%DesGBDxDE%parameter_names_latex( i-3, latexname )
+            call self%DesGBDxDE%parameter_names_latex( i-4, latexname )
             return
         end if
 
@@ -896,8 +948,11 @@ contains
             value = self%xi
             return
         !> the other parameters are the w_DE parameters:
+        else if ( i==4 ) then
+            value = self%x_initial
+            return
         else
-            call self%DesGBDxDE%parameter_value( i-3, value )
+            call self%DesGBDxDE%parameter_value( i-4, value )
             return
         end if
 
@@ -918,16 +973,25 @@ contains
         integer  :: ind
 
         x   = log(a)
-        call self%EFTOmega%precompute(x, ind, mu )
+        call self%EFTOmega%precompute( x, ind, mu )
 
         eft_cache%EFTOmegaV    = self%EFTOmega%value( x, index=ind, coeff=mu )
         eft_cache%EFTOmegaP    = self%EFTOmega%first_derivative( x, index=ind, coeff=mu )
         eft_cache%EFTOmegaPP   = self%EFTOmega%second_derivative( x, index=ind, coeff=mu )
         eft_cache%EFTOmegaPPP  = self%EFTOmega%third_derivative( x, index=ind, coeff=mu )
         eft_cache%EFTc         = self%EFTc%value( x, index=ind, coeff=mu )
-        eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
         eft_cache%EFTcdot      = self%EFTc%first_derivative( x, index=ind, coeff=mu )
-        eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
+
+        !> if a < a_ini then the Lambda funciton is related to the potential and it's not constant.
+        !  so we need the following tweak.
+        ! NOTE: this tweak assumes that phi = 0 before x_initial!!!!
+        if ( x .ge. self%x_initial) then
+            eft_cache%EFTLambda    = self%EFTLambda%value( x, index=ind, coeff=mu )
+            eft_cache%EFTLambdadot = self%EFTLambda%first_derivative( x, index=ind, coeff=mu )
+        else
+            eft_cache%EFTLambda = -3._dl * eft_par_cache%h0_Mpc**2 * a**2 * eft_par_cache%omegav *self%DesGBDxDE%value(a)
+            eft_cache%EFTLambdadot = -3._dl * eft_par_cache%h0_Mpc**2 * a**3 * eft_par_cache%omegav *self%DesGBDxDE%first_derivative(a) * eft_cache%adotoa
+        end if
 
     end subroutine EFTCAMBDesignerGBD2BackgroundEFTFunctions
 
@@ -1054,6 +1118,28 @@ contains
 
 
     end function EFTCAMBDesignerGBD2AdditionalModelStability
+
+    ! ---------------------------------------------------------------------------------------------
+    !> Subroutine that initializes the model for the sampling of the DE density
+    subroutine EFTCAMBDesignerGBD2InitModelParametersSampling( self, array, sampling_params )
+
+        implicit none
+
+        class(EFTCAMB_GBD_designer_2)                           :: self             !< the base class
+        real(dl), dimension(self%parameter_number), intent(in)  :: array            !< array of parameters
+        type(EFTSamplingParameters)                             :: sampling_params  !< the class sampling parameters that contains the DE density
+
+        self%phi_ini    = array(1)
+        self%dphi_ini   = array(2)
+        self%xi         = array(3)
+        self%x_initial  = log(10._dl**array(4))
+
+
+        !> Now I have to initialize the DE density
+        call self%DesGBDxDE%init_from_code( sampling_params%xDE_scale_factor_means, sampling_params%xDE_sample )
+
+
+    end subroutine EFTCAMBDesignerGBD2InitModelParametersSampling
 
     ! ---------------------------------------------------------------------------------------------
 

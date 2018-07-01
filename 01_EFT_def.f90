@@ -31,10 +31,12 @@ module EFT_def
     ! EFT compile time flags:
     character(LEN=*), parameter :: EFTCAMB_version = 'V3.0 Sept17'
 
-    real(dl), parameter :: EFTbackgroundcutoff = 0._dl !< Smallest scale factor that the code should
+    !real(dl), parameter :: EFTbackgroundcutoff = 0._dl !< Smallest scale factor that the code should
+    real(dl), parameter :: EFTbackgroundcutoff = 1.d-3 !< Smallest scale factor that the code should
         !!    consider when copmputing the background. Set to zero, change background at all times.
 
     real(dl), parameter :: EFTturnonpiInitial = 1.d-2   !< Turn on pi field flag:
+!real(dl), parameter :: EFTturnonpiInitial = 1.d-3   !< Turn on pi field flag:
         !!    Sets the scale factor at which the code starts to evolve the pi field.
         !!    At times earlier than these the code evolves perturbations as in GR.
         !!    This number is used as a lower bound and is refined if the teory is very close to GR
