@@ -22,7 +22,8 @@ There is also a module that implements the fractional Dark Energy density instea
  ## Sampling the X(a)
  To study the implications of the reconstructed Dark Energy (fractional) density X(a) it is useful to sample through the allowed X(a) distribution. This is handled by the module contained in
  - `12_EFT_sampler.f90` 
- and is driven by the sampling drivers.
+ 
+ and is driven by the sampling drivers
  - `xDE_sampler.f90` - the standard CAMB version
  - `xDE_sampler_sources.f90` - for CAMB sources
  
