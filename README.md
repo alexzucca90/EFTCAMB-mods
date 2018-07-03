@@ -1,12 +1,10 @@
 # EFTCAMB-mods
-A few mods for [EFTCAMB](https://github.com/EFTCAMB) that I need for my projects.
 
-## Generalized-Brans-Dicke project
-This mod allows to implement in the Pure_EFT case $\Omega(a)$ and $w_{\rm DE}(a)$ from a table of the form
+This repo contains the modified files for [EFTCAMB](https://github.com/EFTCAMB) needed for my projects.
 
-a f(a) f'(a), \int_a^1 dx (1+f(x))/x
+## Dark Energy Denisty Reconstruction project
+We needed to stydy the implications of the non-trivial observed Dark Energy density for the generalized Brans-Dicke (GBD) models. 
 
-The integral is needed for wDE(a).
 
 ## Dark Energy Fractional Density modules
 The reconstruction of a GBD theory is implemented inside EFTCAMB in the files
@@ -20,15 +18,21 @@ There is also a module that implements the fractional Dark Energy density instea
  The DE density can assume several forms, we are mostly focused on a non-Bayesian reconstruction of the DE density, 
  
  ## Sampling the X(a)
- To study the implications of the reconstructed Dark Energy (fractional) density X(a) it is useful to sample through the allowed X(a) distribution. This is handled by the module contained in
+ To study the implications of the reconstructed Dark Energy (fractional) density X(a) it is useful to sample through the allowed X(a) distribution. 
+ The reconstruction of the dark energy density is provided in two files (see `params_EFT.ini`)
+ - `xDE_means_filename` which contains the  means of the reconstructed Dark Energy density
+ - `xDE_covmat_filename` which contains the  covariance matrix of the reconstructed Dark Energy density
+ 
+ We assume that the DE reconstruction is performed on a number of bins specified by `xDE_n_bins`.
+ 
+ Drawing the sample of the DE density his is handled by the module contained in
  - `12_EFT_sampler.f90` 
  
  and is driven by the sampling drivers
  - `xDE_sampler.f90` - the standard CAMB version
  - `xDE_sampler_sources.f90` - for CAMB sources
  
-
-
+ 
 ### Installing (need to be updated)
 
 I assume that your EFTCAMB directory is EFTCAMB/ 
