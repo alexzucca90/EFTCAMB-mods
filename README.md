@@ -8,13 +8,27 @@ a f(a) f'(a), \int_a^1 dx (1+f(x))/x
 
 The integral is needed for wDE(a).
 
-NEW: The reconstruction of a GBD theory is implemented inside EFTCAMB in the files
-- `09p3_Designer_GBD.f90`
-- `09p4_Designer_GBD_mod.f90`
+## Dark Energy Fractional Density modules
+The reconstruction of a GBD theory is implemented inside EFTCAMB in the files
+- `09p3_Designer_GBD.f90` using the DE eos wDE(a). 
+- `09p4_Designer_GBD_mod.f90` using the DE fractional density X(a).
  The first reconstructs the GBD theory provided the equation of state of the effective dark energy (wDE). For theoretical reasons, wDE might not be enough general so I created `09p4_Designer_GBD_mod.f90` to use the fractional density of Dark Energy.
 
+There is also a module that implements the fractional Dark Energy density instead of the equation of state for th epure EFT models,
+ - `07p2_Pure_EFT_mode.f90`
+ 
+ The DE density can assume several forms, we are mostly focused on a non-Bayesian reconstruction of the DE density, 
+ 
+ ## Sampling the X(a)
+ To study the implications of the reconstructed Dark Energy (fractional) density X(a) it is useful to sample through the allowed X(a) distribution. This is handled by the module contained in
+ - `12_EFT_sampler.f90` 
+ and is driven by the sampling drivers.
+ - `xDE_sampler.f90` - the standard CAMB version
+ - `xDE_sampler_sources.f90` - for CAMB sources
+ 
 
-### Installing
+
+### Installing (need to be updated)
 
 I assume that your EFTCAMB directory is EFTCAMB/ 
 
