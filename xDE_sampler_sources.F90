@@ -103,6 +103,7 @@ logical :: DoCounts = .false.
     real(dl), dimension(100)    :: output_scale_factor, output_xDE_sample, output_EFTOmegaV, output_phi
     real(dl)                    :: a_now
     real(dl)                    :: delta_omega_i
+    integer :: i_ic, n_xde
 
     Type( EFTCAMB_timestep_cache ) :: eft_cache_output
     !> xDE MOD END
@@ -502,6 +503,9 @@ logical :: DoCounts = .false.
     ! get the number of parameters:
     param_number = P%EFTCAMB%model%parameter_number
 
+    !write(*,*) 'number of parameters:', param_number
+    !pause
+
     !> xDE MOD START
     !> initializing the sampler class
     write(*,*) "Initializing the xDE distribution"
@@ -510,6 +514,9 @@ logical :: DoCounts = .false.
     !> get the number of parameters in the model
     model_params_num = P%EFTCAMB%model%parameter_number
     allocate(random_params(model_params_num))
+
+    write(*,*) 'number of parameters:', model_params_num
+    !pause
 
     !> here I should also get the bounds for the params
     param1_max = Ini_Read_Double('param1_max', 1.d0)
@@ -661,100 +668,113 @@ logical :: DoCounts = .false.
 
     write(*,*) "    Sampling xDE"
 
-    do while ( num_success < n_samples )! .and. i_sample < 10000000)
+    n_xde = 1
 
-        write(*,*) 'Monte Carlo Step:',i_sample,'. Successfull reconstruction n.:', num_success, ' /', n_samples
+    do while ( num_success < n_samples .or. n_xde < 2000)! .and. i_sample < 10000000)
+
+        !write(*,*) 'Monte Carlo Step:',i_sample,'. Successfull reconstruction n.:', num_success, ' /', n_samples
 
         !> generating the xDE from the distribution
         call EFT_sampling_params%draw_sample_xDE
 
-        !> randomly drawing the parameters for the models (uniform distribution)
-        call random_number(random_params)
+        do i_ic = 1, 1000
 
-        !> now adjust the parameters range
-        random_params(1) = param1_min+random_params(1)*(param1_max-param1_min)
-        if ( model_params_num .ge. 2 )  random_params(2) = param2_min+random_params(2)*(param2_max-param2_min)
-        if ( model_params_num .ge. 3 )  random_params(3) = param3_min+random_params(3)*(param3_max-param3_min)
-        if ( model_params_num .ge. 4 )  random_params(4) = param4_min+random_params(4)*(param4_max-param4_min)
-        if ( model_params_num .ge. 5 )  random_params(5) = param5_min+random_params(5)*(param5_max-param5_min)
-        if ( model_params_num .ge. 6 )  random_params(6) = param6_min+random_params(6)*(param6_max-param6_min)
-
-        !> then I need to initialize the model with these parameters
-        call P%EFTCAMB%model%init_model_parameters_for_sampling( random_params, EFT_sampling_params )
-
-        !> and then solve the background
-        success = .true.
-        call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
-
-        !> if the theory is stable, call CAMB
-        if (success) then
-
-            write(*,*) "Model Parameters:", random_params
-
-            call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
-
-            if(success) then
-
-                call eft_cache_output%initialize
-                call  P%EFTCAMB%model%compute_background_EFT_functions(1._dl, P%eft_par_cache, eft_cache_output )
-
-                delta_omega_i = eft_cache_output%EFTOmegaV
-                write(*,*) 'Delta Omega:',delta_omega_i
-
-                if (abs(delta_omega_i) .le. 5.d-1) then
-
-                    write(*,*) 'theory stable!!! Woooo!'
-                    num_success = num_success+1
-
-                    do i = 1, 100
-                        a_now = output_scale_factor(i)
-                        !> fill the EFT cache
-                        call  P%EFTCAMB%model%compute_background_EFT_functions(a_now, P%eft_par_cache, eft_cache_output )
-                        output_EFTOmegaV(i) = eft_cache_output%EFTOmegaV
-                    end do
-
-                    !> dump in files
-                    write(33,*) EFT_sampling_params%xDE_sample
-                    write(32,*) delta_omega_i
-                    write(88,*) output_EFTOmegaV
-                    write(22,*) random_params
-
-                    !> call CAMB
-                    call CAMB_GetResults(P)
-
-                    !write(*,*) 'Dumping data in files'
-
-                    !> dump cls in file
-                    !> first write the CMB TT spectra
-                    write(31,*) output_factor*Cl_scalar(:,1,1)
-
-                    !> Then write the CMB-GNC cross correlations
-                    write(30,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,4)
-                    write(217,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,5)
-                    write(35,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,6)
-
-                    !> Write the GNC self-correlations
-                    write(36,*) Cl_Scalar_Array(:,1,4,4)
-                    write(37,*) Cl_Scalar_Array(:,1,5,5)
-                    write(38,*) Cl_Scalar_Array(:,1,6,6)
+            write(*,*) 'Monte Carlo Step:',i_sample,'. Successfull reconstruction n.:', num_success, ' /', n_samples
+            write(*,*) '    Initial Conditions:', i_ic, '/1000'
+            write(*,*) '    xDE               :', n_xde
 
 
-                end if
+            !> randomly drawing the parameters for the models (uniform distribution)
+            call random_number(random_params)
+
+            !> now adjust the parameters range
+            random_params(1) = param1_min+random_params(1)*(param1_max-param1_min)
+            if ( model_params_num .ge. 2 )  random_params(2) = param2_min+random_params(2)*(param2_max-param2_min)
+            if ( model_params_num .ge. 3 )  random_params(3) = param3_min+random_params(3)*(param3_max-param3_min)
+            if ( model_params_num .ge. 4 )  random_params(4) = param4_min+random_params(4)*(param4_max-param4_min)
+            if ( model_params_num .ge. 5 )  random_params(5) = param5_min+random_params(5)*(param5_max-param5_min)
+            if ( model_params_num .ge. 6 )  random_params(6) = param6_min+random_params(6)*(param6_max-param6_min)
+
+            !> then I need to initialize the model with these parameters
+            call P%EFTCAMB%model%init_model_parameters_for_sampling( random_params, EFT_sampling_params )
+
+            !> and then solve the background
+            success = .true.
+            call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
+
+            !> if the theory is stable, call CAMB
+            if (success) then
+
+                write(*,*) "Model Parameters:", random_params
+
+                call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
+
+                if(success) then
+
+                    call eft_cache_output%initialize
+                    call  P%EFTCAMB%model%compute_background_EFT_functions(1._dl, P%eft_par_cache, eft_cache_output )
+
+                    delta_omega_i = eft_cache_output%EFTOmegaV
+                    write(*,*) 'Delta Omega:',delta_omega_i
+
+                    if (abs(delta_omega_i) .le. 3.5d-1) then
+
+                        write(*,*) 'theory stable!!! Woooo!'
+                        num_success = num_success+1
+
+                        do i = 1, 100
+                            a_now = output_scale_factor(i)
+                            !> fill the EFT cache
+                            call  P%EFTCAMB%model%compute_background_EFT_functions(a_now, P%eft_par_cache, eft_cache_output )
+                            output_EFTOmegaV(i) = eft_cache_output%EFTOmegaV
+                        end do
+
+                        !> dump in files
+                        write(33,*) EFT_sampling_params%xDE_sample
+                        write(32,*) delta_omega_i
+                        write(88,*) output_EFTOmegaV
+                        write(22,*) random_params
+
+                        !> call CAMB
+                        call CAMB_GetResults(P)
+
+                        !write(*,*) 'Dumping data in files'
+
+                        !> dump cls in file
+                        !> first write the CMB TT spectra
+                        write(31,*) output_factor*Cl_scalar(:,1,1)
+
+                        !> Then write the CMB-GNC cross correlations
+                        write(30,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,4)
+                        write(217,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,5)
+                        write(35,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,6)
+
+                        !> Write the GNC self-correlations
+                        write(36,*) Cl_Scalar_Array(:,1,4,4)
+                        write(37,*) Cl_Scalar_Array(:,1,5,5)
+                        write(38,*) Cl_Scalar_Array(:,1,6,6)
+
+
+                    end if ! if delta omega < 0.5
 
 
 
-                !call eft_cache_output%initialize
-                !call  P%EFTCAMB%model%compute_background_EFT_functions(0.9_dl, P%eft_par_cache, eft_cache_output )
-                !write(*,*) 'writing Omega'
-                !write(31,*) eft_cache_output%EFTOmegaV
-                !write(*,*) eft_cache_output%EFTOmegaV
-                !pause
-            end if
+                    !call eft_cache_output%initialize
+                    !call  P%EFTCAMB%model%compute_background_EFT_functions(0.9_dl, P%eft_par_cache, eft_cache_output )
+                    !write(*,*) 'writing Omega'
+                    !write(31,*) eft_cache_output%EFTOmegaV
+                    !write(*,*) eft_cache_output%EFTOmegaV
+                    !pause
+                end if ! if theory is stable
 
-        end if
+            end if ! if the background is solved successfully
 
 
-        i_sample = i_sample + 1
+            i_sample = i_sample + 1
+
+        end do ! do over initial conditions
+
+        n_xde = n_xde+1
 
     end do
     close(33)
