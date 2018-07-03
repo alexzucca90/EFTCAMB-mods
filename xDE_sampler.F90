@@ -87,11 +87,13 @@ program stability_sampler
     real(dl) :: param3_max, param3_min
     real(dl) :: param4_max, param4_min
     real(dl) :: param5_max, param5_min
+     real(dl) :: param6_max, param6_min
     type(EFTSamplingParameters) :: EFT_sampling_params
     !> output files
     real(dl), dimension(100)    :: output_scale_factor, output_xDE_sample, output_EFTOmegaV, output_phi
     real(dl)                    :: a_now
     real(dl)                    :: delta_omega_i
+    integer :: i_ic, n_xde
 
     Type( EFTCAMB_timestep_cache ) :: eft_cache_output
     !> xDE MOD END
