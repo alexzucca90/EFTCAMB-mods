@@ -29,7 +29,7 @@ module hardcoded_options
 end module hardcoded_options
 
 ! the program itself:
-program stability_sampler
+program xDE_sampler
 
     use IniFile
     use CAMB
@@ -88,7 +88,9 @@ program stability_sampler
 logical :: DoCounts = .false.
 
     !> xDE MOD START: adding the parameters for the sampling of xDE
-    integer :: n_samples = 10000, num_success=0
+    integer, parameter :: n_samples = 10000
+    integer :: n_ic = 100   !< extra boost of IC
+    integer :: num_success=0
     integer :: i_sample
     integer :: model_params_num
     real(dl), dimension(:), allocatable :: random_params
@@ -104,6 +106,10 @@ logical :: DoCounts = .false.
     real(dl)                    :: a_now
     real(dl)                    :: delta_omega_i
     integer :: i_ic, n_xde
+
+    !> error handling stat
+    integer         :: xDE_iostat
+    character(256)  :: xDE_iomsg
 
     Type( EFTCAMB_timestep_cache ) :: eft_cache_output
     !> xDE MOD END
@@ -633,19 +639,84 @@ logical :: DoCounts = .false.
 
     write(*,*) " Opening the files."
     !> opening the files for the plots
-    open(unit=33, file = trim(outroot) // 'xDE_sampled.dat',         status = 'unknown')
-    open(unit=31, file = trim(outroot) // 'xDE_cls_TT.dat',             status = 'unknown')
-    open(unit=30, file = trim(outroot) // 'xDE_cls_TxW1.dat',             status = 'unknown')
-    open(unit=217, file = trim(outroot) // 'xDE_cls_TxW2.dat',             status = 'unknown')
-    open(unit=35, file = trim(outroot) // 'xDE_cls_TxW3.dat',             status = 'unknown')
-    open(unit=36, file = trim(outroot) // 'xDE_cls_W1xW1.dat',             status = 'unknown')
-    open(unit=37, file = trim(outroot) // 'xDE_cls_W2xW2.dat',             status = 'unknown')
-    open(unit=38, file = trim(outroot) // 'xDE_cls_W3xW3.dat',             status = 'unknown')
-    open(unit=32, file = trim(outroot) // 'xDE_delta_Om.dat',        status = 'unknown')
-    open(unit=88, file = trim(outroot) // 'xDE_EFTOmega.dat',        status = 'unknown')
-    open(unit=99, file = trim(outroot) // 'xDE_a_sample.dat',        status = 'unknown')
-    open(unit=98, file = trim(outroot) // 'scale_factor.dat',        status = 'unknown')
-    open(unit=22, file = trim(outroot) // 'init_cond.dat',           status = 'unknown')
+    open(unit=33, file = trim(outroot) // 'xDE_sampled.dat',    status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_sampled.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=31, file = trim(outroot) // 'xDE_cls_TT.dat',     status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_TT.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=30, file = trim(outroot) // 'xDE_cls_TxW1.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_TxW1.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=217, file = trim(outroot) // 'xDE_cls_TxW2.dat',  status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_TxW2.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=35, file = trim(outroot) // 'xDE_cls_TxW3.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_TxW3.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=36, file = trim(outroot) // 'xDE_cls_W1xW1.dat',  status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_W1xW1.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=37, file = trim(outroot) // 'xDE_cls_W2xW2.dat',  status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_W2xW2.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=38, file = trim(outroot) // 'xDE_cls_W3xW3.dat',  status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_cls_W3xW3.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=32, file = trim(outroot) // 'xDE_delta_Om.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_delta_Om.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=88, file = trim(outroot) // 'xDE_EFTOmega.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_EFTOmega.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=99, file = trim(outroot) // 'xDE_a_sample.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining xDE_a_sample.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=98, file = trim(outroot) // 'scale_factor.dat',   status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining scale_factor.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
+    open(unit=22, file = trim(outroot) // 'init_cond.dat',      status = 'unknown', iostat = xDE_iostat, iomsg = xDE_iomsg)
+    if (xDE_iostat /= 0 ) then
+        write(*,*) 'Opeining init_cond.dat failed with', xDE_iostat, xDE_iomsg
+        pause
+    end if
+
     write(*,*) "files opened"
 
     do i = 1, EFT_sampling_params%xDE_n_bins-1
@@ -677,106 +748,111 @@ logical :: DoCounts = .false.
         !> generating the xDE from the distribution
         call EFT_sampling_params%draw_sample_xDE
 
-        do i_ic = 1, 1000
+        !do i_ic = 1, 1000
 
-            write(*,*) 'Monte Carlo Step:',i_sample,'. Successfull reconstruction n.:', num_success, ' /', n_samples
-            write(*,*) '    Initial Conditions:', i_ic, '/1000'
-            write(*,*) '    xDE               :', n_xde
-
-
-            !> randomly drawing the parameters for the models (uniform distribution)
-            call random_number(random_params)
-
-            !> now adjust the parameters range
-            random_params(1) = param1_min+random_params(1)*(param1_max-param1_min)
-            if ( model_params_num .ge. 2 )  random_params(2) = param2_min+random_params(2)*(param2_max-param2_min)
-            if ( model_params_num .ge. 3 )  random_params(3) = param3_min+random_params(3)*(param3_max-param3_min)
-            if ( model_params_num .ge. 4 )  random_params(4) = param4_min+random_params(4)*(param4_max-param4_min)
-            if ( model_params_num .ge. 5 )  random_params(5) = param5_min+random_params(5)*(param5_max-param5_min)
-            if ( model_params_num .ge. 6 )  random_params(6) = param6_min+random_params(6)*(param6_max-param6_min)
-
-            !> then I need to initialize the model with these parameters
-            call P%EFTCAMB%model%init_model_parameters_for_sampling( random_params, EFT_sampling_params )
-
-            !> and then solve the background
-            success = .true.
-            call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
-
-            !> if the theory is stable, call CAMB
-            if (success) then
-
-                write(*,*) "Model Parameters:", random_params
-
-                call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
-
-                if(success) then
-
-                    call eft_cache_output%initialize
-                    call  P%EFTCAMB%model%compute_background_EFT_functions(1._dl, P%eft_par_cache, eft_cache_output )
-
-                    delta_omega_i = eft_cache_output%EFTOmegaV
-                    write(*,*) 'Delta Omega:',delta_omega_i
-
-                    if (abs(delta_omega_i) .le. 3.5d-1) then
-
-                        write(*,*) 'theory stable!!! Woooo!'
-                        num_success = num_success+1
-
-                        do i = 1, 100
-                            a_now = output_scale_factor(i)
-                            !> fill the EFT cache
-                            call  P%EFTCAMB%model%compute_background_EFT_functions(a_now, P%eft_par_cache, eft_cache_output )
-                            output_EFTOmegaV(i) = eft_cache_output%EFTOmegaV
-                        end do
-
-                        !> dump in files
-                        write(33,*) EFT_sampling_params%xDE_sample
-                        write(32,*) delta_omega_i
-                        write(88,*) output_EFTOmegaV
-                        write(22,*) random_params
-
-                        !> call CAMB
-                        call CAMB_GetResults(P)
-
-                        !write(*,*) 'Dumping data in files'
-
-                        !> dump cls in file
-                        !> first write the CMB TT spectra
-                        write(31,*) output_factor*Cl_scalar(:,1,1)
-
-                        !> Then write the CMB-GNC cross correlations
-                        write(30,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,4)
-                        write(217,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,5)
-                        write(35,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,6)
-
-                        !> Write the GNC self-correlations
-                        write(36,*) Cl_Scalar_Array(:,1,4,4)
-                        write(37,*) Cl_Scalar_Array(:,1,5,5)
-                        write(38,*) Cl_Scalar_Array(:,1,6,6)
+        write(*,*) 'Monte Carlo Step:',i_sample,'. Successfull reconstruction n.:', num_success, ' /', n_samples
+        !write(*,*) '    Initial Conditions:', i_ic, '/1000'
+        write(*,*) '    xDE               :', n_xde
 
 
-                    end if ! if delta omega < 0.5
+        !> randomly drawing the parameters for the models (uniform distribution)
+        call random_number(random_params)
+
+        !> now adjust the parameters range
+        random_params(1) = param1_min+random_params(1)*(param1_max-param1_min)
+        if ( model_params_num .ge. 2 )  random_params(2) = param2_min+random_params(2)*(param2_max-param2_min)
+        if ( model_params_num .ge. 3 )  random_params(3) = param3_min+random_params(3)*(param3_max-param3_min)
+        if ( model_params_num .ge. 4 )  random_params(4) = param4_min+random_params(4)*(param4_max-param4_min)
+        if ( model_params_num .ge. 5 )  random_params(5) = param5_min+random_params(5)*(param5_max-param5_min)
+        if ( model_params_num .ge. 6 )  random_params(6) = param6_min+random_params(6)*(param6_max-param6_min)
+
+        !> then I need to initialize the model with these parameters
+        call P%EFTCAMB%model%init_model_parameters_for_sampling( random_params, EFT_sampling_params )
+
+        !> and then solve the background
+        success = .true.
+        call P%EFTCAMB%model%initialize_background( P%eft_par_cache, P%EFTCAMB%EFTCAMB_feedback_level, success )
+
+        !> if the theory is stable, call CAMB
+        if (success) then
+
+            write(*,*) "Model Parameters:", random_params
+
+            call EFTCAMB_Stability_Check( success, P%EFTCAMB, P%eft_par_cache, astart, aend, k_max )
+
+            if(success) then
+
+                call eft_cache_output%initialize
+                call  P%EFTCAMB%model%compute_background_EFT_functions(1._dl, P%eft_par_cache, eft_cache_output )
+
+                delta_omega_i = eft_cache_output%EFTOmegaV
+                write(*,*) 'Delta Omega:',delta_omega_i
+
+                if (abs(delta_omega_i) .le. 5.d-1) then
+
+                write(*,*) 'theory stable!!! Woooo!'
+                    num_success = num_success+1
+
+                    !> call CAMB
+                    write(*,*) 'Calling CAMB'
+                    call CAMB_GetResults(P)
+
+                    !> Re-computing Omega(a)
+                    do i = 1, 100
+                        a_now = output_scale_factor(i)
+                        !> fill the EFT cache
+                        call  P%EFTCAMB%model%compute_background_EFT_functions(a_now, P%eft_par_cache, eft_cache_output )
+                        output_EFTOmegaV(i) = eft_cache_output%EFTOmegaV
+                    end do
+
+                    write(*,*) 'Dumping data in files'
+                    !> dump in files
+                    write(*,*) '    dumping xDE'
+                    write(33,*) EFT_sampling_params%xDE_sample  !< dumping X(a)
+                    write(*,*) '    dumping delta_omega'
+                    write(32,*) delta_omega_i                   !< dumping Delta Omega(a)
+                    write(*,*) '    dumping Omega(a)'
+                    write(88,*) output_EFTOmegaV                !< dumping Omega(a)
+                    write(*,*) '    dumping initial conditions'
+                    write(22,*) random_params                   !< dumping initial conditions
 
 
+                    !> dump cls in file
+                    !> first write the CMB TT spectra
+                    write(*,*) '    dumping Cls TT'
+                    write(31,*) output_factor*Cl_scalar(:,1,1)
 
-                    !call eft_cache_output%initialize
-                    !call  P%EFTCAMB%model%compute_background_EFT_functions(0.9_dl, P%eft_par_cache, eft_cache_output )
-                    !write(*,*) 'writing Omega'
-                    !write(31,*) eft_cache_output%EFTOmegaV
-                    !write(*,*) eft_cache_output%EFTOmegaV
-                    !pause
-                end if ! if theory is stable
+                    !> Then write the CMB-GNC cross correlations
+                    write(*,*) '    dumping Cls TxW1'
+                    write(30,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,4)
+                    write(*,*) '    dumping Cls TxW2'
+                    write(217,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,5)
+                    write(*,*) '    dumping Cls TxW3'
+                    write(35,*) sqrt(output_factor)*Cl_Scalar_Array(:,1,1,6)
 
-            end if ! if the background is solved successfully
+                    !> Write the GNC self-correlations
+                    write(*,*) '    dumping Cls W1xW1'
+                    write(36,*) Cl_Scalar_Array(:,1,4,4)
+                    write(*,*) '    dumping Cls W2xW2'
+                    write(37,*) Cl_Scalar_Array(:,1,5,5)
+                    write(*,*) '    dumping Cls W3xW3'
+                    write(38,*) Cl_Scalar_Array(:,1,6,6)
 
 
-            i_sample = i_sample + 1
+                end if ! if delta omega < 0.5
 
-        end do ! do over initial conditions
+
+            end if !< if theory is stable
+
+        end if !< if the background is solved successfully
+
+
+        i_sample = i_sample + 1
 
         n_xde = n_xde+1
 
-    end do
+    end do !< end do on the xDE sampling
+
     close(33)
     close(31)
     close(30)
@@ -791,12 +867,14 @@ logical :: DoCounts = .false.
 
 !> xDE MOD END
 
+!> xDE MOD END
 
-    close(1)
+
+    !close(1)
 
     call CAMB_cleanup
     ! stop
 
 100 stop 'Must give num_massive number of integer physical neutrinos for each eigenstate'
 
-end program stability_sampler
+end program xDE_sampler
